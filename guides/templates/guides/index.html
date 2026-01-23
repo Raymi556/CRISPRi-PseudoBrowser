@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Guides - CRISPRi-seq{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Guides Browser</h1>
+    <p>Explore individual guide performance across conditions</p>
+</div>
+
+<div class="card-header" style="font-weight: bold; font-size: 1.5em;">Coming Soon!</div>
+{% comment %} <div class="card">
+    <div class="card-header" style="font-weight: bold; font-size: 1.5em;">Coming Soon!</div>
+    <p style="color: var(--text-secondary);">
+        This section will allow you to:
+    </p>
+    <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+        <li>Search for specific guide sequences</li>
+        <li>View guide performance across all conditions</li>
+        <li>Filter by targeting efficiency and off-target counts</li>
+        <li>Compare guides targeting the same gene</li>
+        <li>Export guide statistics and metadata</li>
+    </ul>
+    
+    <p style="color: var(--text-secondary); margin-top: 1.5rem;">
+        For now, please use the <a href="{% url 'gene:index' %}" style="color: var(--accent-red);">Gene Browser</a> to explore guide-level data in genomic context.
+    </p> {% endcomment %}
+</div>
+{% endblock %}

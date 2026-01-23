@@ -1,0 +1,17 @@
+# CRISPRi-seq Browser Environment
+# Export this environment for reproducibility
+
+name: pseudoBrowser
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - Django==5.2
+    - pandas==3.0.0
+    - openpyxl==3.1.5
+    - plotly==6.5.2
+    - numpy>=2.4.0
+    - python-dateutil>=2.9.0

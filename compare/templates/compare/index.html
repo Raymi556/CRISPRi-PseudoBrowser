@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Compare - CRISPRi-seq{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Gene Set Comparison</h1>
+    <p>Compare multiple genes or custom gene sets</p>
+</div>
+
+<div class="card-header" style="font-weight: bold; font-size: 1.5em;">Coming Soon!</div>
+{% comment %} <div class="card">
+    <div class="card-header" style="font-weight: bold; font-size: 1.5em;">Coming Soon!</div>
+    <p style="color: var(--text-secondary);">
+        This section will allow you to:
+    </p>
+    <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+        <li>Input custom gene lists for batch analysis</li>
+        <li>Compare effects across multiple genes</li>
+        <li>Generate heatmaps of gene effects across conditions</li>
+        <li>Cluster genes by similar phenotypic profiles</li>
+        <li>Export comparison results and visualizations</li>
+    </ul>
+    
+    <p style="color: var(--text-secondary); margin-top: 1.5rem;">
+        For now, please use the <a href="{% url 'gene:index' %}" style="color: var(--accent-red);">Gene Browser</a> to explore individual genes.
+    </p> {% endcomment %}
+</div>
+{% endblock %}

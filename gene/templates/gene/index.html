@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gene Browser - CRISPRi-seq{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Gene Browser</h1>
+    <p>Explore CRISPRi guide effects in <em>Pseudomonas aeruginosa</em> genomic context</p>
+</div>
+
+<div class="grid grid-2">
+    <!-- Control Panel -->
+    <div class="card">
+        <div class="card-header">Search Parameters</div>
+        
+        <form id="gene-form">
+            <div class="form-group" style="position: relative;">
+                <label for="gene-input" class="form-label">
+                    Target Gene or PAO1_ID
+                    <span class="help-tooltip">
+                        <span class="help-icon">?</span>
+                        <span class="help-tooltip-content">
+                            <strong>PA prefix</strong> refers to <em>Pseudomonas aeruginosa</em> gene identifiers from the PAO1 reference strain (e.g., PA0003). You can search by gene name (e.g., dnaN) or PAO1 ID.
+                        </span>
+                    </span>
+                </label>
+                <div style="position: relative;">
+                    <input 
+                        type="text" 
+                        id="gene-input" 
+                        class="form-control" 
+                        value=""
+                        placeholder="e.g., dnaN or PA0003"
+                        autocomplete="off"
+                    >
+                </div>
+                <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                    Start typing to see suggestions
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="window-input" class="form-label">Window Size (bp)</label>
+                <input 
+                    type="range" 
+                    id="window-slider" 
+                    min="{{ min_gene_length }}" 
+                    max="{{ max_gene_length }}" 
+                    step="1000"
+                    value="{{ default_window }}"
+                >
+                <input 
+                    type="number" 
+                    id="window-input" 
+                    class="form-control" 
+                    value="{{ default_window }}"
+                    min="{{ min_gene_length }}"
+                    max="{{ max_gene_length }}"
+                    step="1000"
+                >
+                <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                    Range: {{ min_gene_length }} - {{ max_gene_length }} bp
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="conditions-select" class="form-label">Conditions</label>
+                <select 
+                    id="conditions-select" 
+                    class="form-control" 
+                    multiple 
+                    size="6"
+                    style="height: auto;"
+                >
+                    {% for condition in conditions %}
+                    <option value="{{ condition }}" 
+                        {% if condition in default_conditions %}selected{% endif %}>
+                        {{ condition }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                    Hold Ctrl/Cmd to select multiple conditions
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Generate Plots
+            </button>
+        </form>
+
+        <div id="error-message" class="message message-error" style="display: none; margin-top: 1rem;">
+        </div>
+    </div>
+
+    <!-- Gene Info Card -->
+    <div class="card" id="gene-info-card" style="display: none;">
+        <div class="card-header">Gene Information</div>
+        <div id="gene-info-content"></div>
+    </div>
+</div>
+
+<!-- Plots Container -->
+<div id="plots-container" style="display: none;">
+    <div class="plot-container">
+        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Gene Context</h3>
+        <div id="gene-context-plot"></div>
+    </div>
+
+    <div class="plot-container">
+        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Guide-level Log2 Fold Change</h3>
+        <div id="lfc-plot"></div>
+    </div>
+
+    <div class="table-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="color: var(--text-primary); margin: 0;">Guide Data</h3>
+            <button id="download-csv" class="btn btn-secondary">Download CSV</button>
+        </div>
+        <div id="guides-table-container"></div>
+    </div>
+</div>
+
+<div id="loading" class="loading" style="display: none;">
+    <div class="spinner"></div>
+    <p style="margin-top: 1rem;">Loading data...</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize the gene browser with Django context (MUST BE BEFORE OTHER SCRIPTS)
+    window.CONDITIONS = {{ conditions|safe }};
+    window.GENE_DATA_URL = "{% url 'gene:get_gene_data' %}";
+    window.GENE_LIST_URL = "{% url 'gene:gene_list' %}";
+    window.CSRF_TOKEN = '{{ csrf_token }}';
+    window.MIN_GENE_LENGTH = {{ min_gene_length }};
+    window.MAX_GENE_LENGTH = {{ max_gene_length }};
+</script>
+<script src="{% static 'js/gene_autocomplete.js' %}"></script>
+<script src="{% static 'js/custom_slider.js' %}"></script>
+<script src="{% static 'js/gene_plot.js' %}"></script>
+{% endblock %}

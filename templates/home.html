@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}CRISPRi-seq Data Browser{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align: center; margin-bottom: 3rem;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">CRISPRi-seq Data Browser</h1>
+    <p style="font-size: 1.2rem; color: var(--text-secondary);">Interactive exploration of <em>Pseudomonas aeruginosa</em> CRISPRi screening data</p>
+</div>
+
+<!-- Current Capabilities -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h2 style="margin: 0; font-size: 1.5rem;">Current Capabilities</h2>
+    </div>
+    <div style="padding: 0 1.5rem 1.5rem;">
+        <div class="grid grid-1" style="gap: 1.5rem; margin-top: 1.5rem;">
+            <div>
+                <h3 style="color: var(--accent-red); margin-bottom: 0.75rem; font-size: 1.25rem;">
+                    <a href="{% url 'gene:index' %}" style="color: var(--accent-red); text-decoration: none;">Gene Browser</a>
+                </h3>
+                <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                    Visualize CRISPRi guide effects in <em>P. aeruginosa</em> genomic context with interactive plots. Search by gene name or PAO1 identifier, adjust genomic windows, and compare across experimental conditions.
+                </p>
+                <div style="background-color: var(--bg-tertiary); padding: 1rem; border-radius: 4px; border-left: 3px solid var(--accent-red);">
+                    <p style="margin: 0; color: var(--text-primary); font-size: 0.95rem;"><strong>Features:</strong></p>
+                    <ul style="margin: 0.5rem 0 0 1.5rem; color: var(--text-secondary); line-height: 1.8;">
+                        <li>Gene context visualization showing guide positions</li>
+                        <li>Guide-level Log2 fold change plots</li>
+                        <li>Multi-condition comparison</li>
+                        <li>Customizable genomic window size</li>
+                        <li>Interactive Plotly visualizations</li>
+                        <li>CSV data export</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h2 style="margin: 0; font-size: 1.5rem;">Quick Start Guide</h2>
+    </div>
+    <div style="padding: 1.5rem;">
+        <div class="grid grid-1" style="gap: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: start;">
+                <div style="background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-dark) 100%); color: white; width: 40px; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4); transform: rotate(-3deg);">1</div>
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Navigate to Gene Browser</h4>
+                    <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">Click on the "Gene" tab in the navigation bar or use the link above.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: start;">
+                <div style="background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-dark) 100%); color: white; width: 40px; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4); transform: rotate(2deg);">2</div>
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Enter Gene Information</h4>
+                    <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">Type a gene name (e.g., <code style="background-color: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px;">dnaN</code>) or PAO1 identifier (e.g., <code style="background-color: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px;">PA0003</code>) in the search box.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: start;">
+                <div style="background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-dark) 100%); color: white; width: 40px; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4); transform: rotate(-2deg);">3</div>
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Adjust Parameters</h4>
+                    <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">Set the genomic window size (default: 5000 bp) and select one or more experimental conditions to compare.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: start;">
+                <div style="background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-dark) 100%); color: white; width: 40px; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4); transform: rotate(3deg);">4</div>
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">Generate Plots</h4>
+                    <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">Click "Generate Plots" to visualize the data. Interact with the plots and download results as CSV.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coming Soon -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h2 style="margin: 0; font-size: 1.5rem;">Coming Soon!</h2>
+    </div>
+    <div style="padding: 1.5rem;">
+        <div class="grid grid-2" style="gap: 1.5rem;">
+            <div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.1rem;">Guides Browser</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin: 0;">Browse and filter guide-level data across all experiments.</p>
+            </div>
+            
+            <div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.1rem;">Condition Analysis</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin: 0;">Volcano plots and condition-specific comparisons.</p>
+            </div>
+            
+            <div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.1rem;">Pathway Enrichment</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin: 0;">Pathway and gene ontology enrichment analysis.</p>
+            </div>
+            
+            <div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.1rem;">Gene Comparison</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin: 0;">Compare multiple genes side-by-side.</p>
+            </div>
+            
+            <div>
+                <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1.1rem;">Downloads</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin: 0;">Bulk data downloads and comprehensive documentation.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Get Started Button -->
+<div style="text-align: center; margin-top: 3rem;">
+    <a href="{% url 'gene:index' %}" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2.5rem; text-decoration: none; display: inline-block;">
+        Explore Gene Browser →
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Pathway - CRISPRi-seq{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Pathway Analysis</h1>
+    <p>Explore enriched pathways and gene ontology terms</p>
+</div>
+
+<div class="card-header" style="font-weight: bold; font-size: 1.5em;">Coming Soon!</div>
+{% comment %} <div class="card">
+    <div class="card-header" style="font-weight: bold; font-size: 1.5em;">Coming Soon!</div>
+    <p style="color: var(--text-secondary);">
+        This section will allow you to:
+    </p>
+    <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 1rem;">
+        <li>View KEGG pathway enrichment analysis</li>
+        <li>Explore Gene Ontology (GO) term enrichment</li>
+        <li>Identify functional modules affected by CRISPRi</li>
+        <li>Visualize pathway-level effects across conditions</li>
+        <li>Export pathway analysis results</li>
+    </ul>
+    
+    <p style="color: var(--text-secondary); margin-top: 1.5rem;">
+        For now, please use the <a href="{% url 'gene:index' %}" style="color: var(--accent-red);">Gene Browser</a> to explore individual genes and their operon context.
+    </p> {% endcomment %}
+</div>
+{% endblock %}
