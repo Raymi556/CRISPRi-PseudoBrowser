@@ -442,6 +442,7 @@ function createGuidesTable(guides) {
                     <th>LFC</th>
                     <th>Position</th>
                     <th>Strand</th>
+                    <th>Mean Abundance</th>
                     <th>Off-targets</th>
                     <th>GC%</th>
                 </tr>
@@ -455,8 +456,9 @@ function createGuidesTable(guides) {
                     <td><input type="text" class="column-search" placeholder="LFC" data-column="4"></td>
                     <td><input type="text" class="column-search" placeholder="Position" data-column="5"></td>
                     <td><input type="text" class="column-search" placeholder="Strand" data-column="6"></td>
-                    <td><input type="text" class="column-search" placeholder="Off-targets" data-column="7"></td>
-                    <td><input type="text" class="column-search" placeholder="GC%" data-column="8"></td>
+                    <td><input type="text" class="column-search" placeholder="Mean Abundance" data-column="7"></td>
+                    <td><input type="text" class="column-search" placeholder="Off-targets" data-column="8"></td>
+                    <td><input type="text" class="column-search" placeholder="GC%" data-column="9"></td>
                 </tr>
             </tfoot>
             <tbody>
@@ -481,6 +483,7 @@ function createGuidesTable(guides) {
                 <td style="color: ${lfcColor}; font-weight: 600;">${guide['LFC.adj'].toFixed(3)}</td>
                 <td>${Math.round(guide.guide_center).toLocaleString()}</td>
                 <td>${guide.forward ? '+' : '-'}</td>
+                <td>${guide.mean_abund_50M ? guide.mean_abund_50M.toFixed(2) : 'N/A'}</td>
                 <td>${guide.off_target_n || 0}</td>
                 <td>${guide.gc ? (guide.gc * 100).toFixed(1) : 'N/A'}</td>
             </tr>

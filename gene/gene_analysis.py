@@ -110,7 +110,7 @@ def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
     # Join with guide library metadata
     guides_df = guides_df.merge(
         fl_guides[['spacer', 'pam', 'downstream', 'off_target_n', 
-                   'mean_abundance_in_library', 'offset', 'gc']],
+                   'mean_abund_50M', 'offset', 'gc']],
         on='spacer',
         how='left'
     )
