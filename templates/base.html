@@ -6,6 +6,13 @@
     <title>{% block title %}CRISPRi-seq Data Browser{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.css">
+    <script src="https://cdn.datatables.net/2.3.7/js/dataTables.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.1.1/css/buttons.dataTables.css">
+    <script src="https://cdn.datatables.net/buttons/3.1.1/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.1.1/js/buttons.html5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     {% block extra_css %}{% endblock %}
 </head>
@@ -50,7 +57,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 1.5rem;">
                 <div>
                     <p style="margin: 0 0 0.5rem 0; color: var(--text-primary);">
-                        &copy; 2026 by Kawalek's Lab, <a href="https://ibb.edu.pl/en/" style="color: var(--accent-red); text-decoration: none;">IBB PAS</a>
+                        &copy; 2026 by Laboratory of Molecular Microbiology and Bacterial Genetics, <a href="https://ibb.edu.pl/en/" style="color: var(--accent-red); text-decoration: none;">IBB PAS</a>
                     </p>
                     <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
                         Browser currently in α version: 0.1.0

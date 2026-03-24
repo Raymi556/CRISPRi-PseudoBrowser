@@ -8,10 +8,8 @@ echo "=================================="
 echo ""
 echo "Activating pseudoBrowser environment..."
 
-cd /home/rgoitia/10_apps/CRISPRi-PseudoBrowser
-
 # Run the development server
-mamba run -n pseudoBrowser python manage.py runserver
+conda run -n pseudoBrowser python manage.py runserver
 
 echo ""
 echo "Server stopped."

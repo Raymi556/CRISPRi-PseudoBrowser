@@ -11,7 +11,7 @@
 
 <div class="grid grid-2">
     <!-- Control Panel -->
-    <div class="card">
+    <div class="card", style="min-height: 800px">
         <div class="card-header">Search Parameters</div>
         
         <form id="gene-form">
@@ -70,7 +70,7 @@
                     id="conditions-select" 
                     class="form-control" 
                     multiple 
-                    size="6"
+                    size="14"
                     style="height: auto;"
                 >
                     {% for condition in conditions %}
@@ -94,37 +94,32 @@
         </div>
     </div>
 
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem;">Loading data...</p>
+    </div>
+
     <!-- Gene Info Card -->
     <div class="card" id="gene-info-card" style="display: none;">
-        <div class="card-header">Gene Information</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="card-header" style="margin: 0;">Gene Information</div>
+            <button id="download-plot" class="btn btn-secondary">Download Plot</button>
+        </div>
         <div id="gene-info-content"></div>
+        <div class="plot-container" id="plots-container" style="display: none;">
+            <div id="combined-gene-plot"></div>
+        </div>
     </div>
 </div>
 
-<!-- Plots Container -->
-<div id="plots-container" style="display: none;">
-    <div class="plot-container">
-        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Gene Context</h3>
-        <div id="gene-context-plot"></div>
-    </div>
-
-    <div class="plot-container">
-        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Guide-level Log2 Fold Change</h3>
-        <div id="lfc-plot"></div>
-    </div>
-
+<!-- Guide Data Table - Full Width -->
+<div id="table-wrapper" style="display: none;">
     <div class="table-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="color: var(--text-primary); margin: 0;">Guide Data</h3>
-            <button id="download-csv" class="btn btn-secondary">Download CSV</button>
+        <div style="margin-bottom: 1rem;">
+            <h3 style="color: var(--text-primary); margin: 0 0 1rem 0;">Guide Data</h3>
         </div>
         <div id="guides-table-container"></div>
     </div>
-</div>
-
-<div id="loading" class="loading" style="display: none;">
-    <div class="spinner"></div>
-    <p style="margin-top: 1rem;">Loading data...</p>
 </div>
 {% endblock %}
 
@@ -140,5 +135,5 @@
 </script>
 <script src="{% static 'js/gene_autocomplete.js' %}"></script>
 <script src="{% static 'js/custom_slider.js' %}"></script>
-<script src="{% static 'js/gene_plot.js' %}"></script>
+<script src="{% static 'js/gene_plot.js' %}?v=20260324"></script>
 {% endblock %}

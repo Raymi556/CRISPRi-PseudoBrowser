@@ -131,8 +131,7 @@ async function loadGeneData() {
         displayGeneInfo(data.target_gene);
         
         // Create plots
-        createGeneContextPlot(data.genes, data.region);
-        createLFCPlot(data.guides, data.region);
+        createCombinedGenePlot(data.genes, data.guides, data.region);
         createGuidesTable(data.guides);
         
         showPlots();
@@ -155,27 +154,27 @@ function displayGeneInfo(geneData) {
     const strand = geneData.strand === '+' ? 'Forward (+)' : 'Reverse (-)';
     
     infoContent.innerHTML = `
-        <table style="width: 100%; font-size: 0.9rem;">
+        <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse; line-height: 1.25;">
             <tr>
-                <td style="color: var(--text-secondary); padding: 0.5rem 0;"><strong>PAO1 ID:</strong></td>
-                <td style="color: var(--text-primary); padding: 0.5rem 0;">${geneData.PAO1_ID}</td>
+                <td class="gene-info-head"><strong>PAO1 ID:</strong></td>
+                <td class="gene-info-details">${geneData.PAO1_ID}</td>
             </tr>
             <tr>
-                <td style="color: var(--text-secondary); padding: 0.5rem 0;"><strong>Gene Name:</strong></td>
-                <td style="color: var(--text-primary); padding: 0.5rem 0;">${geneData.gene_name}</td>
+                <td class="gene-info-head"><strong>Gene Name:</strong></td>
+                <td class="gene-info-details">${geneData.gene_name}</td>
             </tr>
             <tr>
-                <td style="color: var(--text-secondary); padding: 0.5rem 0;"><strong>Location:</strong></td>
-                <td style="color: var(--text-primary); padding: 0.5rem 0;">${geneData.start.toLocaleString()} - ${geneData.end.toLocaleString()}</td>
+                <td class="gene-info-head"><strong>Location:</strong></td>
+                <td class="gene-info-details">${geneData.start.toLocaleString()} - ${geneData.end.toLocaleString()}</td>
             </tr>
             <tr>
-                <td style="color: var(--text-secondary); padding: 0.5rem 0;"><strong>Strand:</strong></td>
-                <td style="color: var(--text-primary); padding: 0.5rem 0;">${strand}</td>
+                <td class="gene-info-head"><strong>Strand:</strong></td>
+                <td class="gene-info-details">${strand}</td>
             </tr>
             ${geneData.operon ? `
             <tr>
-                <td style="color: var(--text-secondary); padding: 0.5rem 0;"><strong>Operon:</strong></td>
-                <td style="color: var(--text-primary); padding: 0.5rem 0;">${geneData.operon}</td>
+                <td class="gene-info-head"><strong><strong>Operon:</strong></td>
+                <td class="gene-info-details">${geneData.operon}</td>
             </tr>
             ` : ''}
         </table>
@@ -185,106 +184,177 @@ function displayGeneInfo(geneData) {
 }
 
 /**
- * Create gene context plot (genomic arrows)
+ * Create combined stacked visualization with shared genomic x-axis
  */
-function createGeneContextPlot(genes, region) {
-    const plotDiv = document.getElementById('gene-context-plot');
+function createCombinedGenePlot(genes, guides, region) {
+    const plotDiv = document.getElementById('combined-gene-plot');
+
+    if (!plotDiv) {
+        throw new Error('Plot container "combined-gene-plot" was not found in the DOM');
+    }
+
+    // Reset any fallback HTML from prior no-data states before plotting.
+    plotDiv.innerHTML = '';
     
-    if (!genes || genes.length === 0) {
-        plotDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No genes in this region</p>';
+    if ((!genes || genes.length === 0) && (!guides || guides.length === 0)) {
+        plotDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No data available for this region</p>';
         return;
     }
-    
-    // Create shapes for gene arrows
+
+    const geneLayer = buildGeneContextLayer(genes);
+    const lfcTraces = buildLFCTraces(guides);
+
+    const annotations = [...geneLayer.annotations];
+    if (!genes || genes.length === 0) {
+        annotations.push({
+            x: (region.start + region.end) / 2,
+            y: 0.84,
+            xref: 'x2',
+            yref: 'paper',
+            text: 'No genes in this region',
+            showarrow: false,
+            font: { size: 12, color: '#a0a0a0' }
+        });
+    }
+
+    if (!guides || guides.length === 0) {
+        annotations.push({
+            x: (region.start + region.end) / 2,
+            y: 0.28,
+            xref: 'x',
+            yref: 'paper',
+            text: 'No guide data available for selected conditions',
+            showarrow: false,
+            font: { size: 12, color: '#a0a0a0' }
+        });
+    }
+
+    const layout = {
+        // Bottom panel (LFC)
+        xaxis: {
+            range: [region.start, region.end],
+            title: 'Genomic Position (bp)',
+            color: '#a0a0a0',
+            gridcolor: '#2a2a2a',
+            domain: [0, 1],
+            anchor: 'y'
+        },
+        yaxis: {
+            title: 'Log2 Fold Change',
+            color: '#a0a0a0',
+            gridcolor: '#2a2a2a',
+            zeroline: true,
+            zerolinecolor: '#666666',
+            zerolinewidth: 2,
+            domain: [0, 0.62]
+        },
+        // Top panel (Gene context)
+        xaxis2: {
+            range: [region.start, region.end],
+            matches: 'x',
+            color: '#a0a0a0',
+            gridcolor: '#2a2a2a',
+            showticklabels: false,
+            domain: [0, 1],
+            anchor: 'y2'
+        },
+        yaxis2: {
+            range: [0, 1],
+            showticklabels: false,
+            showgrid: false,
+            zeroline: false,
+            domain: [0.7, 1]
+        },
+        legend: {
+            x: 0.5,
+            y: -0.2,
+            xanchor: 'center',
+            yanchor: 'top',
+            bgcolor: '#2a2a2a',
+            bordercolor: '#404040',
+            borderwidth: 0.8,
+            orientation: 'h'
+        },
+        shapes: geneLayer.shapes,
+        annotations: annotations,
+        paper_bgcolor: '#1a1a1a',
+        plot_bgcolor: '#1a1a1a',
+        font: { color: '#e0e0e0' },
+        margin: { t: 20, b: 120, l: 60, r: 20 },
+        height: 620,
+        hovermode: 'closest'
+    };
+
+    const config = {
+        responsive: true,
+        displaylogo: false
+    };
+
+    Plotly.newPlot(plotDiv, lfcTraces, layout, config);
+}
+
+function buildGeneContextLayer(genes) {
     const shapes = [];
     const annotations = [];
-    
-    genes.forEach((gene, idx) => {
+
+    if (!genes || genes.length === 0) {
+        return { shapes: shapes, annotations: annotations };
+    }
+
+    genes.forEach(gene => {
         const y = 0.5;
         const height = 0.3;
         const isForward = gene.strand === 'forward';
-        
+
         // Gene body (rectangle)
         shapes.push({
             type: 'rect',
             x0: gene.start,
             x1: gene.end,
-            y0: y - height/2,
-            y1: y + height/2,
+            y0: y - height / 2,
+            y1: y + height / 2,
+            xref: 'x2',
+            yref: 'y2',
             fillcolor: getOperonColor(gene.operon),
             line: { color: '#ffffff', width: 1 },
             layer: 'below'
         });
-        
+
         // Arrow head
         const arrowSize = Math.min((gene.end - gene.start) * 0.1, 200);
-        const arrowX = isForward ? gene.end : gene.start;
-        const arrowDirection = isForward ? 1 : -1;
-        
         shapes.push({
             type: 'path',
-            path: isForward 
-                ? `M ${gene.end - arrowSize} ${y - height/2} L ${gene.end} ${y} L ${gene.end - arrowSize} ${y + height/2}`
-                : `M ${gene.start + arrowSize} ${y - height/2} L ${gene.start} ${y} L ${gene.start + arrowSize} ${y + height/2}`,
+            path: isForward
+                ? `M ${gene.end - arrowSize} ${y - height / 2} L ${gene.end} ${y} L ${gene.end - arrowSize} ${y + height / 2}`
+                : `M ${gene.start + arrowSize} ${y - height / 2} L ${gene.start} ${y} L ${gene.start + arrowSize} ${y + height / 2}`,
+            xref: 'x2',
+            yref: 'y2',
             fillcolor: getOperonColor(gene.operon),
             line: { color: '#ffffff', width: 1 },
             layer: 'below'
         });
-        
+
         // Gene label
         annotations.push({
             x: (gene.start + gene.end) / 2,
             y: y + 0.3,
+            xref: 'x2',
+            yref: 'y2',
             text: gene.gene_name || gene.PAO1_ID,
             showarrow: false,
             font: { size: 10, color: '#e0e0e0' },
             textangle: 90
         });
     });
-    
-    const layout = {
-        xaxis: {
-            range: [region.start, region.end],
-            title: 'Genomic Position (bp)',
-            color: '#a0a0a0',
-            gridcolor: '#2a2a2a'
-        },
-        yaxis: {
-            range: [0, 1],
-            showticklabels: false,
-            showgrid: false,
-            zeroline: false
-        },
-        shapes: shapes,
-        annotations: annotations,
-        paper_bgcolor: '#1a1a1a',
-        plot_bgcolor: '#1a1a1a',
-        font: { color: '#e0e0e0' },
-        margin: { t: 20, b: 50, l: 50, r: 20 },
-        height: 200,
-        hovermode: 'closest'
-    };
-    
-    const config = {
-        responsive: true,
-        displayModeBar: true,
-        displaylogo: false
-    };
-    
-    Plotly.newPlot(plotDiv, [], layout, config);
+
+    return { shapes: shapes, annotations: annotations };
 }
 
-/**
- * Create log2 fold change plot
- */
-function createLFCPlot(guides, region) {
-    const plotDiv = document.getElementById('lfc-plot');
-    
+function buildLFCTraces(guides) {
     if (!guides || guides.length === 0) {
-        plotDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No guide data available for selected conditions</p>';
-        return;
+        return [];
     }
-    
+
     // Group guides by condition
     const conditionGroups = {};
     guides.forEach(guide => {
@@ -293,23 +363,25 @@ function createLFCPlot(guides, region) {
         }
         conditionGroups[guide.condition].push(guide);
     });
-    
+
     // Create traces for each condition
-    const traces = Object.keys(conditionGroups).map((condition, idx) => {
+    return Object.keys(conditionGroups).map((condition, idx) => {
         const conditionGuides = conditionGroups[condition];
-        
+
         return {
             x: conditionGuides.map(g => g.guide_center),
             y: conditionGuides.map(g => g['LFC.adj']),
             mode: 'markers',
             type: 'scatter',
             name: condition,
+            xaxis: 'x',
+            yaxis: 'y',
             marker: {
                 size: 8,
                 color: getConditionColor(idx),
                 opacity: 0.8
             },
-            text: conditionGuides.map(g => 
+            text: conditionGuides.map(g =>
                 `Gene: ${g.gene_name}<br>` +
                 `Guide: ${g.spacer}<br>` +
                 `LFC: ${g['LFC.adj'].toFixed(3)}<br>` +
@@ -318,46 +390,10 @@ function createLFCPlot(guides, region) {
             hovertemplate: '%{text}<extra></extra>'
         };
     });
-    
-    const layout = {
-        xaxis: {
-            range: [region.start, region.end],
-            title: 'Genomic Position (bp)',
-            color: '#a0a0a0',
-            gridcolor: '#2a2a2a'
-        },
-        yaxis: {
-            title: 'Log2 Fold Change',
-            color: '#a0a0a0',
-            gridcolor: '#2a2a2a',
-            zeroline: true,
-            zerolinecolor: '#666666',
-            zerolinewidth: 2
-        },
-        paper_bgcolor: '#1a1a1a',
-        plot_bgcolor: '#1a1a1a',
-        font: { color: '#e0e0e0' },
-        margin: { t: 20, b: 50, l: 60, r: 20 },
-        height: 400,
-        hovermode: 'closest',
-        legend: {
-            bgcolor: '#2a2a2a',
-            bordercolor: '#404040',
-            borderwidth: 1
-        }
-    };
-    
-    const config = {
-        responsive: true,
-        displayModeBar: true,
-        displaylogo: false
-    };
-    
-    Plotly.newPlot(plotDiv, traces, layout, config);
 }
 
 /**
- * Create guides data table
+ * Create guides data table with DataTables
  */
 function createGuidesTable(guides) {
     const container = document.getElementById('guides-table-container');
@@ -367,9 +403,14 @@ function createGuidesTable(guides) {
         return;
     }
     
+    // Clear previous table if exists
+    if ($.fn.dataTable.isDataTable('#guidesDataTable')) {
+        $('#guidesDataTable').DataTable().destroy();
+    }
+    
     // Build table HTML
     let tableHTML = `
-        <table class="table">
+        <table id="guidesDataTable" class="table display" style="width:100%;">
             <thead>
                 <tr>
                     <th>Gene</th>
@@ -383,6 +424,19 @@ function createGuidesTable(guides) {
                     <th>GC%</th>
                 </tr>
             </thead>
+            <tfoot>
+                <tr>
+                    <td><input type="text" class="column-search" placeholder="Gene" data-column="0"></td>
+                    <td><input type="text" class="column-search" placeholder="PAO1_ID" data-column="1"></td>
+                    <td><input type="text" class="column-search" placeholder="Condition" data-column="2"></td>
+                    <td><input type="text" class="column-search" placeholder="Spacer" data-column="3"></td>
+                    <td><input type="text" class="column-search" placeholder="LFC" data-column="4"></td>
+                    <td><input type="text" class="column-search" placeholder="Position" data-column="5"></td>
+                    <td><input type="text" class="column-search" placeholder="Strand" data-column="6"></td>
+                    <td><input type="text" class="column-search" placeholder="Off-targets" data-column="7"></td>
+                    <td><input type="text" class="column-search" placeholder="GC%" data-column="8"></td>
+                </tr>
+            </tfoot>
             <tbody>
     `;
     
@@ -413,52 +467,191 @@ function createGuidesTable(guides) {
     
     tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
+    
+    // Initialize DataTables with configuration
+    let table = new DataTable('#guidesDataTable', {
+        pageLength: 10,
+        responsive: true,
+        paging: true,
+        searching: true,
+        ordering: true,
+        order: [[4, 'asc']], // Sort by LFC (column 4) ascending by default
+        lengthMenu: [10, 25, 50],
+        layout: {
+            topEnd: 'search'
+        },
+        buttons: [
+            {
+                extend: 'copy',
+                className: 'btn btn-secondary',
+                text: 'Copy'
+            },
+            {
+                extend: 'csv',
+                className: 'btn btn-secondary',
+                text: 'Download CSV',
+                filename: `guides_${currentData.target_gene.gene_name}_${Date.now()}`
+            }
+        ],
+        columnDefs: [
+            {
+                targets: '_all',
+                orderable: true,
+                searchable: true,
+                className: 'dt-left',
+            }
+        ],
+    });
+    
+    // Add event listeners for column-specific search inputs
+    $('#guidesDataTable').on('keyup change', '.column-search', function() {
+        const columnIndex = $(this).data('column');
+        const searchValue = $(this).val();
+        table.column(columnIndex).search(searchValue).draw();
+    });
 }
 
 /**
- * Download guides data as CSV
+ * Download guides data as CSV (removed - now handled by DataTables)
  */
 document.addEventListener('DOMContentLoaded', function() {
-    const downloadBtn = document.getElementById('download-csv');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', function() {
-            if (!currentData || !currentData.guides) {
-                alert('No data available to download');
-                return;
+    const downloadPlotBtn = document.getElementById('download-plot');
+    if (downloadPlotBtn) {
+        downloadPlotBtn.addEventListener('click', async function() {
+            try {
+                await downloadPaperReadyPlot();
+            } catch (error) {
+                alert(error.message || 'Failed to download plot');
+                console.error('Error downloading paper-ready plot:', error);
             }
-            
-            const guides = currentData.guides;
-            
-            // Create CSV content
-            const headers = ['Gene', 'PAO1_ID', 'Condition', 'Spacer', 'LFC', 'Position', 'Strand', 'Off_Targets', 'GC'];
-            const rows = guides.map(g => [
-                g.gene_name,
-                g.PAO1_ID,
-                g.condition,
-                g.spacer,
-                g['LFC.adj'].toFixed(3),
-                Math.round(g.guide_center),
-                g.forward ? 'Forward' : 'Reverse',
-                g.off_target_n || 0,
-                g.gc ? (g.gc * 100).toFixed(1) : ''
-            ]);
-            
-            let csvContent = headers.join(',') + '\n';
-            rows.forEach(row => {
-                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
-            });
-            
-            // Download
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `guides_${currentData.target_gene.gene_name}_${Date.now()}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
         });
     }
+
+    // Note: CSV download is now handled by DataTables buttons extension
+    // The download-csv button is removed from the template and DataTables handles CSV export
 });
+
+
+async function downloadPaperReadyPlot() {
+    if (!currentData) {
+        throw new Error('No plot data available to download');
+    }
+
+    const sourcePlotDiv = document.getElementById('combined-gene-plot');
+    if (!sourcePlotDiv || !sourcePlotDiv.data || !sourcePlotDiv.layout) {
+        throw new Error('Plot is not available for download');
+    }
+
+    const paperData = JSON.parse(JSON.stringify(sourcePlotDiv.data));
+    const paperLayout = buildPaperReadyLayout(sourcePlotDiv.layout);
+
+    const exportWidth = 1800;
+    const exportHeight = 1200;
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-10000px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = `${exportWidth}px`;
+    tempDiv.style.height = `${exportHeight}px`;
+    document.body.appendChild(tempDiv);
+
+    try {
+        await Plotly.newPlot(tempDiv, paperData, paperLayout, {
+            displayModeBar: false,
+            displaylogo: false,
+            responsive: false,
+            staticPlot: true
+        });
+
+        await Plotly.downloadImage(tempDiv, {
+            format: 'png',
+            filename: `paper_figure_${currentData.target_gene.gene_name}_${Date.now()}`,
+            width: exportWidth,
+            height: exportHeight,
+            scale: 2
+        });
+    } finally {
+        Plotly.purge(tempDiv);
+        tempDiv.remove();
+    }
+}
+
+function buildPaperReadyLayout(sourceLayout) {
+    const layout = JSON.parse(JSON.stringify(sourceLayout || {}));
+
+    layout.paper_bgcolor = '#ffffff';
+    layout.plot_bgcolor = '#ffffff';
+    layout.font = {
+        ...(layout.font || {}),
+        color: '#111111',
+        size: 17,
+        family: 'Arial, sans-serif'
+    };
+    layout.margin = { t: 30, b: 90, l: 110, r: 30 };
+
+    ['xaxis', 'xaxis2', 'yaxis', 'yaxis2'].forEach(axisName => {
+        if (!layout[axisName]) {
+            return;
+        }
+
+        layout[axisName].color = '#111111';
+        layout[axisName].gridcolor = '#d9d9d9';
+        layout[axisName].tickfont = {
+            ...(layout[axisName].tickfont || {}),
+            size: 15,
+            color: '#111111'
+        };
+        layout[axisName].title = {
+            ...(layout[axisName].title || {}),
+            font: {
+                ...((layout[axisName].title && layout[axisName].title.font) || {}),
+                size: 17,
+                color: '#111111'
+            }
+        };
+    });
+
+    if (layout.yaxis) {
+        layout.yaxis.zerolinecolor = '#777777';
+    }
+
+    if (layout.annotations) {
+        layout.annotations = layout.annotations.map(annotation => ({
+            ...annotation,
+            font: {
+                ...(annotation.font || {}),
+                color: '#111111',
+                size: Math.max((annotation.font && annotation.font.size) || 10, 12)
+            }
+        }));
+    }
+
+    if (layout.shapes) {
+        layout.shapes = layout.shapes.map(shape => {
+            const updatedShape = { ...shape };
+            if (updatedShape.line) {
+                updatedShape.line = { ...updatedShape.line, color: '#111111' };
+            }
+            return updatedShape;
+        });
+    }
+
+    if (layout.legend) {
+        layout.legend = {
+            ...layout.legend,
+            bgcolor: '#ffffff',
+            bordercolor: '#111111',
+            borderwidth: 1,
+            font: {
+                ...(layout.legend.font || {}),
+                color: '#111111',
+                size: 14
+            }
+        };
+    }
+
+    return layout;
+}
 
 /**
  * Utility functions
@@ -500,13 +693,15 @@ function hideError() {
 
 function showLoading(show) {
     const loadingDiv = document.getElementById('loading');
-    loadingDiv.style.display = show ? 'block' : 'none';
+    loadingDiv.style.display = show ? 'flex' : 'none';
 }
 
 function showPlots() {
     document.getElementById('plots-container').style.display = 'block';
+    document.getElementById('table-wrapper').style.display = 'block';
 }
 
 function hidePlots() {
     document.getElementById('plots-container').style.display = 'none';
+    document.getElementById('table-wrapper').style.display = 'none';
 }
