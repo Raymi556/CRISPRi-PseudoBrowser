@@ -68,9 +68,9 @@ def get_genes_in_region(region_start, region_end):
     ].copy()
     
     # Normalize strand information
-    genes_in_region['strand'] = genes_in_region['strand'].apply(
-        lambda x: 'forward' if x == '+' else 'reverse'
-    )
+    # genes_in_region['strand'] = genes_in_region['strand'].apply(
+    #     lambda x: 'forward' if x == '+' else 'reverse'
+    # )
     
     return genes_in_region
 
@@ -132,6 +132,24 @@ def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
     
     return guides_df
 
+
+def calculate_median_lfc_per_condition(guides_df):
+    """
+    Calculate median LFC per condition
+    
+    Args:
+        guides_df: DataFrame with guide information and LFC values
+    
+    Returns:
+        dict with condition as key and median LFC as value
+    """
+    if guides_df.empty:
+        return {}
+    
+    medians = guides_df.groupby('condition')['LFC.adj'].median().to_dict()
+    return medians
+
+
 def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
     """
     Prepare all data needed for gene visualization
@@ -173,9 +191,13 @@ def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
     else:
         guides_data = pd.DataFrame()
     
+    # Calculate median LFC per condition
+    median_lfc = calculate_median_lfc_per_condition(guides_data) if not guides_data.empty else {}
+    
     return {
         'genes': genes_in_region.to_dict('records'),
         'guides': guides_data.to_dict('records'),
         'region': region,
-        'target_gene': target_gene.to_dict()
+        'target_gene': target_gene.to_dict(),
+        'median_lfc': median_lfc
     }

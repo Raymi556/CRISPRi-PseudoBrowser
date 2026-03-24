@@ -204,6 +204,28 @@ function createCombinedGenePlot(genes, guides, region) {
     const geneLayer = buildGeneContextLayer(genes);
     const lfcTraces = buildLFCTraces(guides);
 
+    // Add median lines for each condition
+    let medianTraces = [];
+    if (currentData.median_lfc) {
+        const conditions = Object.keys(currentData.median_lfc);
+        medianTraces = conditions.map((condition, idx) => {
+            const medianValue = currentData.median_lfc[condition];
+            return {
+                x: [region.start, region.end],
+                y: [medianValue, medianValue],
+                mode: 'lines',
+                name: `${condition} median`,
+                line: {
+                    color: getConditionColor(idx),
+                    width: 2,
+                    dash: 'dash'
+                },
+                yaxis: 'y',
+                hovertemplate: `<b>${condition} Median</b><br>LFC: %{y:.2f}<extra></extra>`
+            };
+        });
+    }
+
     const annotations = [...geneLayer.annotations];
     if (!genes || genes.length === 0) {
         annotations.push({
@@ -290,7 +312,7 @@ function createCombinedGenePlot(genes, guides, region) {
         displaylogo: false
     };
 
-    Plotly.newPlot(plotDiv, lfcTraces, layout, config);
+    Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces], layout, config);
 }
 
 function buildGeneContextLayer(genes) {
@@ -304,7 +326,7 @@ function buildGeneContextLayer(genes) {
     genes.forEach(gene => {
         const y = 0.5;
         const height = 0.3;
-        const isForward = gene.strand === 'forward';
+        const isForward = gene.strand === '+';
 
         // Gene body (rectangle)
         shapes.push({
@@ -458,7 +480,7 @@ function createGuidesTable(guides) {
                 <td><code style="font-size: 0.85em; background: #2a2a2a; padding: 2px 4px; border-radius: 3px;">${guide.spacer}</code></td>
                 <td style="color: ${lfcColor}; font-weight: 600;">${guide['LFC.adj'].toFixed(3)}</td>
                 <td>${Math.round(guide.guide_center).toLocaleString()}</td>
-                <td>${guide.forward ? 'Forward' : 'Reverse'}</td>
+                <td>${guide.forward ? '+' : '-'}</td>
                 <td>${guide.off_target_n || 0}</td>
                 <td>${guide.gc ? (guide.gc * 100).toFixed(1) : 'N/A'}</td>
             </tr>
