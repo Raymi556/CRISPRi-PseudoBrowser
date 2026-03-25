@@ -11,5 +11,4 @@ echo "Activating pseudoBrowser environment..."
 # Run the development server
 conda run -n pseudoBrowser python manage.py runserver
 
-echo ""
 echo "Server stopped."
