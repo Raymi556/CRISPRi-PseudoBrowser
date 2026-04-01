@@ -133,21 +133,28 @@ def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
     return guides_df
 
 
-def calculate_median_lfc_per_condition(guides_df):
+def calculate_gene_level_median_lfc(guides_df):
     """
-    Calculate median LFC per condition
-    
+    Calculate median LFC per gene and condition.
+
     Args:
         guides_df: DataFrame with guide information and LFC values
-    
+
     Returns:
-        dict with condition as key and median LFC as value
+        list of dicts with PAO1_ID, gene_name, condition, and median_lfc
     """
     if guides_df.empty:
-        return {}
-    
-    medians = guides_df.groupby('condition')['LFC.adj'].median().to_dict()
-    return medians
+        return []
+
+    medians_df = (
+        guides_df
+        .groupby(['PAO1_ID', 'gene_name', 'condition'], dropna=False)['LFC.adj']
+        .median()
+        .reset_index()
+        .rename(columns={'LFC.adj': 'median_lfc'})
+    )
+
+    return medians_df.to_dict('records')
 
 
 def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
@@ -191,13 +198,13 @@ def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
     else:
         guides_data = pd.DataFrame()
     
-    # Calculate median LFC per condition
-    median_lfc = calculate_median_lfc_per_condition(guides_data) if not guides_data.empty else {}
+    # Calculate median LFC per gene and condition for segmented per-gene plot lines
+    gene_median_lfc = calculate_gene_level_median_lfc(guides_data) if not guides_data.empty else []
     
     return {
         'genes': genes_in_region.to_dict('records'),
         'guides': guides_data.to_dict('records'),
         'region': region,
         'target_gene': target_gene.to_dict(),
-        'median_lfc': median_lfc
+        'gene_median_lfc': gene_median_lfc
     }

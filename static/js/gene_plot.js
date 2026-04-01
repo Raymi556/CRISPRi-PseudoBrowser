@@ -204,27 +204,8 @@ function createCombinedGenePlot(genes, guides, region) {
     const geneLayer = buildGeneContextLayer(genes);
     const lfcTraces = buildLFCTraces(guides);
 
-    // Add median lines for each condition
-    let medianTraces = [];
-    if (currentData.median_lfc) {
-        const conditions = Object.keys(currentData.median_lfc);
-        medianTraces = conditions.map((condition, idx) => {
-            const medianValue = currentData.median_lfc[condition];
-            return {
-                x: [region.start, region.end],
-                y: [medianValue, medianValue],
-                mode: 'lines',
-                name: `${condition} median`,
-                line: {
-                    color: getConditionColor(idx),
-                    width: 2,
-                    dash: 'dash'
-                },
-                yaxis: 'y',
-                hovertemplate: `<b>${condition} Median</b><br>LFC: %{y:.2f}<extra></extra>`
-            };
-        });
-    }
+    // Add median line segments for each gene and condition (from gene start to gene end)
+    const medianTraces = buildGeneMedianTraces(guides, genes, currentData.gene_median_lfc);
 
     const annotations = [...geneLayer.annotations];
     if (!genes || genes.length === 0) {
@@ -267,7 +248,7 @@ function createCombinedGenePlot(genes, guides, region) {
             gridcolor: '#2a2a2a',
             zeroline: true,
             zerolinecolor: '#666666',
-            zerolinewidth: 2,
+            zerolinewidth: 1.5,
             domain: [0, 0.62]
         },
         // Top panel (Gene context)
@@ -313,6 +294,75 @@ function createCombinedGenePlot(genes, guides, region) {
     };
 
     Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces], layout, config);
+}
+
+function buildGeneMedianTraces(guides, genes, geneMedianLfc) {
+    if (!geneMedianLfc || geneMedianLfc.length === 0 || !genes || genes.length === 0) {
+        return [];
+    }
+
+    const geneById = {};
+    genes.forEach(gene => {
+        if (gene && gene.PAO1_ID) {
+            geneById[gene.PAO1_ID] = gene;
+        }
+    });
+
+    const conditionOrder = [];
+    if (guides && guides.length > 0) {
+        guides.forEach(guide => {
+            if (guide.condition && !conditionOrder.includes(guide.condition)) {
+                conditionOrder.push(guide.condition);
+            }
+        });
+    }
+
+    const conditionIndex = {};
+    conditionOrder.forEach((condition, idx) => {
+        conditionIndex[condition] = idx;
+    });
+
+    const shownLegendConditions = new Set();
+
+    return geneMedianLfc
+        .filter(entry => entry && entry.PAO1_ID && entry.condition && entry.median_lfc !== null && entry.median_lfc !== undefined)
+        .map(entry => {
+            const gene = geneById[entry.PAO1_ID];
+            if (!gene) {
+                return null;
+            }
+
+            const conditionIdx = (entry.condition in conditionIndex) ? conditionIndex[entry.condition] : conditionOrder.length;
+            const geneLabel = entry.gene_name || entry.PAO1_ID;
+
+            const showLegend = !shownLegendConditions.has(entry.condition);
+            if (showLegend) {
+                shownLegendConditions.add(entry.condition);
+            }
+
+            return {
+                x: [gene.start, gene.end],
+                y: [entry.median_lfc, entry.median_lfc],
+                mode: 'lines',
+                type: 'scatter',
+                name: `${entry.condition} median`,
+                legendgroup: `median-${entry.condition}`,
+                showlegend: showLegend,
+                xaxis: 'x',
+                yaxis: 'y',
+                line: {
+                    color: getConditionColor(conditionIdx),
+                    width: 2,
+                    dash: 'dash'
+                },
+                hovertemplate:
+                    `<b>${entry.condition} Median</b><br>` +
+                    `Gene: ${geneLabel}<br>` +
+                    `Range: ${gene.start.toLocaleString()} - ${gene.end.toLocaleString()}<br>` +
+                    `LFC: %{y:.3f}<extra></extra>`
+            };
+        })
+        .filter(Boolean);
 }
 
 function buildGeneContextLayer(genes) {
@@ -401,7 +451,7 @@ function buildLFCTraces(guides) {
             marker: {
                 size: 8,
                 color: getConditionColor(idx),
-                opacity: 0.8
+                opacity: 0.5
             },
             text: conditionGuides.map(g =>
                 `Gene: ${g.gene_name}<br>` +
