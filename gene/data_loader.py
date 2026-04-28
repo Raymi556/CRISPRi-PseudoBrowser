@@ -2,7 +2,6 @@
 Data loading utilities for CRISPRi-seq Browser
 """
 import pandas as pd
-import gzip
 from pathlib import Path
 from django.conf import settings
 
@@ -20,40 +19,25 @@ def load_pao1_annotation():
         _data_cache['pao1'] = pd.read_csv(data_path, sep='\t')
     return _data_cache['pao1']
 
-def load_pao1_enriched():
-    """Load PAO1 enriched data"""
-    if 'pao1_enriched' not in _data_cache:
-        data_path = get_data_path() / 'P_PAO1_enriched.xlsx'
-        _data_cache['pao1_enriched'] = pd.read_excel(data_path)
-    return _data_cache['pao1_enriched']
-
 def load_fl_guides():
     """Load full-length guides library data"""
     if 'fl_guides' not in _data_cache:
-        data_path = get_data_path() / 'Lib1_FLguides.xlsx'
-        _data_cache['fl_guides'] = pd.read_excel(data_path)
+        data_path = get_data_path() / 'Lib1_FLguides.tsv'
+        _data_cache['fl_guides'] = pd.read_csv(data_path, sep='\t')
     return _data_cache['fl_guides']
 
 def load_melted_results():
     """Load melted results (guide-level data)"""
     if 'melted_results' not in _data_cache:
-        data_path = get_data_path() / 'melted_results_trim.tsv.gz'
-        with gzip.open(data_path, 'rt') as f:
-            _data_cache['melted_results'] = pd.read_csv(f, sep='\t')
+        data_path = get_data_path() / 'melted_results_trim.tsv'
+        _data_cache['melted_results'] = pd.read_csv(data_path, sep='\t')
     return _data_cache['melted_results']
-
-def load_median_melted_results():
-    """Load median melted results"""
-    if 'median_melted' not in _data_cache:
-        data_path = get_data_path() / 'median_melted_results_trim.tsv.gz'
-        with gzip.open(data_path, 'rt') as f:
-            _data_cache['median_melted'] = pd.read_csv(f, sep='\t')
-    return _data_cache['median_melted']
 
 def get_available_conditions():
     """Get list of available experimental conditions"""
     melted = load_melted_results()
     return sorted(melted['condition'].unique().tolist())
+
 def get_gene_list():
     """Get cached list of genes for autocomplete"""
     if 'gene_list' not in _data_cache:
@@ -91,6 +75,7 @@ def get_gene_length_limits():
             'max': int(gene_lengths.max())
         }
     return _data_cache['gene_length_limits']
+
 def clear_cache():
     """Clear the data cache (useful for testing/development)"""
     _data_cache.clear()
