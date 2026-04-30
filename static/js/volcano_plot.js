@@ -237,7 +237,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
                 }
             },
             text: nonSignificantGenes.map(r => 
-                `<b>${r.gene_name}</b><br/>LFC: ${r.lfc.toFixed(2)}<br/>FDR: ${r.fdr.toExponential(2)}`
+                `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>FDR: ${r.fdr.toExponential(2)}`
             ),
             hovertemplate: '%{text}<extra></extra>',
             showlegend: true
@@ -262,7 +262,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
                 }
             },
             text: significantGenes.map(r => 
-                `<b>${r.gene_name}</b><br/>LFC: ${r.lfc.toFixed(2)}<br/>FDR: ${r.fdr.toExponential(2)}`
+                `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>FDR: ${r.fdr.toExponential(2)}`
             ),
             hovertemplate: '%{text}<extra></extra>',
             showlegend: true
