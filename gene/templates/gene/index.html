@@ -30,7 +30,7 @@
                         type="text" 
                         id="gene-input" 
                         class="form-control" 
-                        value=""
+                        value="{{ default_gene }}"
                         placeholder="e.g., dnaN or PA0003"
                         autocomplete="off"
                     >
@@ -132,8 +132,22 @@
     window.CSRF_TOKEN = '{{ csrf_token }}';
     window.MIN_GENE_LENGTH = {{ min_gene_length }};
     window.MAX_GENE_LENGTH = {{ max_gene_length }};
+    window.AUTO_SUBMIT = {{ auto_submit|lower }};  // Auto-submit form when gene/condition params are provided
 </script>
 <script src="{% static 'js/gene_autocomplete.js' %}"></script>
 <script src="{% static 'js/custom_slider.js' %}"></script>
 <script src="{% static 'js/gene_plot.js' %}?v=20260324"></script>
+<script>
+    // Auto-submit form if navigating from condition volcano plot with gene/condition parameters
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.AUTO_SUBMIT) {
+            setTimeout(function() {
+                const geneForm = document.getElementById('gene-form');
+                if (geneForm) {
+                    geneForm.dispatchEvent(new Event('submit'));
+                }
+            }, 100);  // Small delay to allow initialization
+        }
+    });
+</script>
 {% endblock %}

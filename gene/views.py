@@ -11,11 +11,28 @@ def index(request):
     conditions = get_available_conditions()
     gene_limits = get_gene_length_limits()
     
+    # Check for query parameters from condition volcano plot or direct links
+    default_gene = request.GET.get('gene', 'dnaN')
+    default_window = int(request.GET.get('window', 5000))
+    
+    # Handle condition parameter (single condition from volcano plot)
+    param_condition = request.GET.get('condition')
+    if param_condition:
+        # Use the specific condition from parameter, or fall back to default
+        default_conditions = [param_condition] if param_condition in conditions else (
+            ['None_E2_T1 - None_E2_T0'] if 'None_E2_T1 - None_E2_T0' in conditions else ([conditions[0]] if conditions else [])
+        )
+        auto_submit = True  # Flag to auto-submit the form
+    else:
+        default_conditions = ['None_E2_T1 - None_E2_T0'] if 'None_E2_T1 - None_E2_T0' in conditions else [conditions[0]] if conditions else []
+        auto_submit = False
+    
     context = {
         'conditions': conditions,
-        'default_gene': 'dnaN',
-        'default_window': 5000,
-        'default_conditions': ['None_E2_T1 - None_E2_T0'] if 'None_E2_T1 - None_E2_T0' in conditions else [conditions[0]] if conditions else [],
+        'default_gene': default_gene,
+        'default_window': default_window,
+        'default_conditions': default_conditions,
+        'auto_submit': auto_submit,
         'min_gene_length': gene_limits['min'],
         'max_gene_length': gene_limits['max']
     }

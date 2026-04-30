@@ -40,7 +40,7 @@ class CustomSlider {
     attachEvents() {
         // Slider change updates input
         this.slider.addEventListener('input', () => {
-            const value = parseInt(this.slider.value);
+            const value = parseFloat(this.slider.value);
             this.input.value = value;
             this.saveValue(value);
             this.options.onChange(value);
@@ -48,7 +48,7 @@ class CustomSlider {
         
         // Input change updates slider
         this.input.addEventListener('input', () => {
-            let value = parseInt(this.input.value);
+            let value = parseFloat(this.input.value);
             
             // Validate and clamp value
             if (isNaN(value)) return;
@@ -65,7 +65,7 @@ class CustomSlider {
         
         // Handle manual input validation on blur
         this.input.addEventListener('blur', () => {
-            let value = parseInt(this.input.value);
+            let value = parseFloat(this.input.value);
             
             if (isNaN(value)) {
                 value = this.loadValue() || this.options.defaultValue;
@@ -85,7 +85,7 @@ class CustomSlider {
     }
     
     getValue() {
-        return parseInt(this.slider.value);
+        return parseFloat(this.slider.value);
     }
     
     saveValue(value) {
@@ -94,7 +94,7 @@ class CustomSlider {
     
     loadValue() {
         const value = localStorage.getItem(this.options.storageKey);
-        return value !== null ? parseInt(value) : null;
+        return value !== null ? parseFloat(value) : null;
     }
     
     updateLimits(min, max) {

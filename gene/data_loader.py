@@ -76,6 +76,40 @@ def get_gene_length_limits():
         }
     return _data_cache['gene_length_limits']
 
+def load_condition_hits(condition):
+    """Load volcano plot data for a specific condition"""
+    cache_key = f'condition_hits_{condition}'
+    if cache_key not in _data_cache:
+        # Map condition names to file names
+        # Condition names like "CAZ_1_T1 - None_E2_T1" map to "P_significant_hits_CAZ_1.tsv"
+        condition_base = condition.split('_T')[0].split(' -')[0].strip()
+        
+        data_path = get_data_path() / f'P_significant_hits_{condition_base}.tsv'
+        
+        if not data_path.exists():
+            return None
+        
+        _data_cache[cache_key] = pd.read_csv(data_path, sep='\t')
+    
+    return _data_cache[cache_key]
+
+def get_volcano_conditions():
+    """Get list of conditions available for volcano plot (from P_significant_hits files)"""
+    if 'volcano_conditions' not in _data_cache:
+        data_path = get_data_path()
+        conditions = []
+        
+        # Look for all P_significant_hits_*.tsv files
+        for file in data_path.glob('P_significant_hits_*.tsv'):
+            if '_curated' not in file.name:  # Skip curated versions
+                # Extract condition name from filename
+                condition = file.name.replace('P_significant_hits_', '').replace('.tsv', '')
+                conditions.append(condition)
+        
+        _data_cache['volcano_conditions'] = sorted(conditions)
+    
+    return _data_cache['volcano_conditions']
+
 def clear_cache():
     """Clear the data cache (useful for testing/development)"""
     _data_cache.clear()
