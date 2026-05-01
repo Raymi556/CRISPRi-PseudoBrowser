@@ -10,7 +10,7 @@
 </div>
 
 <div class="grid" style="grid-template-columns: 1fr 2fr;">
-    <div class="card" style="min-height: 800px; min-width: 400px">
+    <div class="card" style="min-height: 680px; min-width: 400px">
         <div class="card-header">Pathway Selection</div>
 
         <form id="pathway-form">
@@ -40,7 +40,7 @@
 
             <div class="form-group">
                 <label class="form-label">Genes Linked To Selected Term</label>
-                <div id="gene-checklist" style="max-height: 340px; overflow-y: auto; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.75rem; background-color: var(--input-bg);">
+                <div id="gene-checklist" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.75rem; background-color: var(--bg-primary);">
                     <div style="color: var(--text-secondary); font-size: 0.9rem;">Select a term to list genes.</div>
                 </div>
                 <small id="selection-count" style="color: var(--text-secondary); display: block; margin-top: 0.3rem;"></small>
@@ -53,7 +53,7 @@
         <div id="pathway-error" class="message message-error" style="display: none; margin-top: 1rem;"></div>
     </div>
 
-    <div class="card" style="min-height: 800px;">
+    <div class="card" style="min-height: 680px;">
         <div id="dataset-records-title" class="card-header">Dataset Records</div>
         <div id="dataset-table-container"></div>
     </div>
@@ -68,5 +68,5 @@
     window.PATHWAY_SYNC_STARRED_URL = "{% url 'pathway:sync_starred' %}";
     window.CSRF_TOKEN = '{{ csrf_token }}';
 </script>
-<script src="{% static 'js/pathway_browser.js' %}?v=202604301"></script>
+<script src="{% static 'js/pathway_browser.js' %}?v=20260501b"></script>
 {% endblock %}

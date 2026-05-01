@@ -668,7 +668,7 @@ input[type="range"]::-moz-range-thumb:hover {
 .dt-button {
     padding: 0.5rem 1rem;
     margin-right: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.25rem;
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
@@ -707,12 +707,24 @@ input[type="range"]::-moz-range-thumb:hover {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .dt-layout-cell {
     flex: 1;
     min-width: 200px;
+}
+
+.dt-container .dt-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+.dt-container .dt-buttons .dt-button {
+    margin-right: 0;
+    margin-bottom: 0;
 }
 
 /* Table styling with DataTables */

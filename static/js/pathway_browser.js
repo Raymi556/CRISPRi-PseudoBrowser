@@ -1,6 +1,5 @@
 let selectedTerm = null;
 let currentGenes = [];
-let currentDatasetRecords = [];
 let searchDebounce = null;
 let datasetTable = null;
 
@@ -32,29 +31,21 @@ function getSelectedDatasetLabel() {
     return option ? option.text.trim().replace(/^PAO1\s*/i, '') : 'Dataset';
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function updateDatasetTitle() {
     const title = document.getElementById('dataset-records-title');
     if (!title) {
         return;
     }
     title.textContent = getSelectedDatasetLabel();
-}
-
-function buildDatasetTableRow(record) {
-    const accession = record.Accession || '';
-    const name = record.Name || '';
-    const termLabel = accession || name ? `${accession}${accession && name ? ' - ' : ''}${name}` : '';
-    return `
-        <tr>
-            ${Object.keys(record).map(key => {
-                if (key === 'Accession' || key === 'Name') {
-                    const value = record[key] || '';
-                    return `<td><a href="#" class="dataset-term-link" data-accession="${accession}" data-name="${name}" style="color: var(--accent-red); text-decoration: none;">${value}</a></td>`;
-                }
-                return `<td>${record[key] || ''}</td>`;
-            }).join('')}
-        </tr>
-    `;
 }
 
 function showPathwayMessage(text) {
@@ -103,7 +94,7 @@ function renderGenes(genes) {
         const label = gene.gene_name ? `${gene.gene_name} (${gene.PAO1_ID})` : gene.PAO1_ID;
         const checked = gene.starred ? 'checked' : '';
         return `
-            <label style="display: block; margin-bottom: 0.5rem; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;">
+            <label style="display: block; margin-bottom: 0.5rem; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; background-color: var(--bg-secondary);">
                 <input type="checkbox" class="pathway-gene-checkbox" value="${gene.PAO1_ID}" data-gene-name="${gene.gene_name || ''}" ${checked}>
                 <span style="margin-left: 0.5rem; color: var(--text-primary);">${label}</span>
                 <span style="display: block; margin-left: 1.65rem; color: var(--text-secondary); font-size: 0.85rem;">${gene.product_name || 'No product name available'}</span>
@@ -123,22 +114,64 @@ function renderGenes(genes) {
 function renderDatasetTable(records) {
     const container = document.getElementById('dataset-table-container');
 
+    if (datasetTable) {
+        datasetTable.destroy();
+        datasetTable = null;
+    }
+
     if (!records.length) {
         container.innerHTML = '<div style="color: var(--text-secondary);">No dataset rows available.</div>';
-        if (datasetTable) {
-            datasetTable.destroy();
-            datasetTable = null;
-        }
         return;
     }
 
-    const headers = Object.keys(records[0]).map(key => `<th>${key}</th>`).join('');
-    const body = records.map(record => buildDatasetTableRow(record)).join('');
+    const headers = Object.keys(records[0]).filter(
+        key => !['PAO1 ID', 'PAO1_ID'].includes(String(key).trim().toUpperCase().replace(/\s+/g, ' '))
+    );
+
+    const dedupedRecords = [];
+    const seen = new Set();
+    records.forEach(record => {
+        const dedupeKey = headers.map(key => String(record[key] ?? '')).join('||');
+        if (!seen.has(dedupeKey)) {
+            seen.add(dedupeKey);
+            dedupedRecords.push(record);
+        }
+    });
+
+    const body = dedupedRecords.map(record => {
+        const accession = record.Accession || '';
+        const name = record.Name || '';
+
+        return `
+            <tr>
+                ${headers.map(key => {
+                    const value = record[key] || '';
+                    if (key === 'Accession' || key === 'Name') {
+                        return `
+                            <td>
+                                <a href="#" class="dataset-term-link" data-accession="${escapeHtml(accession)}" data-name="${escapeHtml(name)}" style="color: var(--accent-red); text-decoration: none;">
+                                    ${escapeHtml(value)}
+                                </a>
+                            </td>
+                        `;
+                    }
+                    return `<td>${escapeHtml(value)}</td>`;
+                }).join('')}
+            </tr>
+        `;
+    }).join('');
+
+    const footer = headers.map((key, index) => `
+        <td>
+            <input type="text" class="column-search" placeholder="${escapeHtml(key)}" data-column="${index}">
+        </td>
+    `).join('');
 
     container.innerHTML = `
         <div class="table-container" style="padding: 0; margin: 0; border: none; background: transparent;">
-            <table id="pathway-dataset-table" class="table" style="width: 100%;">
-                <thead><tr>${headers}</tr></thead>
+            <table id="pathway-dataset-table" class="table display" style="width: 100%;">
+                <thead><tr>${headers.map(key => `<th>${escapeHtml(key)}</th>`).join('')}</tr></thead>
+                <tfoot><tr>${footer}</tr></tfoot>
                 <tbody>${body}</tbody>
             </table>
         </div>
@@ -159,6 +192,35 @@ function renderDatasetTable(records) {
             }
         });
     });
+
+    if ($.fn.dataTable) {
+        datasetTable = $('#pathway-dataset-table').DataTable({
+            destroy: true,
+            paging: true,
+            searching: true,
+            ordering: true,
+            pageLength: 10,
+            lengthMenu: [10, 25, 50],
+            order: [[0, 'asc']],
+            layout: {
+                topStart: 'buttons',
+                topEnd: 'search'
+            },
+            language: {
+                search: 'Search records:',
+                paginate: {
+                    previous: '← Previous',
+                    next: 'Next →'
+                }
+            }
+        });
+
+        $('#pathway-dataset-table').on('keyup change', '.column-search', function() {
+            const columnIndex = $(this).data('column');
+            const searchValue = $(this).val();
+            datasetTable.column(columnIndex).search(searchValue).draw();
+        });
+    }
 }
 
 async function loadGenesForTerm(term) {
@@ -186,8 +248,7 @@ async function loadGenesForTerm(term) {
 
 async function loadDatasetRecords() {
     const data = await fetchJson(`${window.PATHWAY_DATASET_RECORDS_URL}?dataset=${encodeURIComponent(getSelectedDataset())}`);
-    currentDatasetRecords = data.records || [];
-    renderDatasetTable(currentDatasetRecords);
+    renderDatasetTable(data.records || []);
 }
 
 function showTermDropdown(terms) {

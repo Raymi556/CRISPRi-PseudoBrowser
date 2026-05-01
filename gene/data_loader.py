@@ -186,32 +186,6 @@ def get_genes_for_pathway_term(dataset, accession, name):
     return sorted(records, key=lambda x: (x['gene_name'] or x['PAO1_ID'], x['PAO1_ID']))
 
 
-def get_pathway_records_for_term(dataset, accession, name):
-    """Get source dataset rows for the selected term, for table rendering."""
-    dataset = (dataset or '').strip().lower()
-    accession = str(accession or '').strip()
-    name = str(name or '').strip()
-
-    if dataset == 'cog':
-        df = load_pao1_cog()
-    elif dataset == 'go':
-        df = load_pao1_gene_ontology()
-    else:
-        return []
-
-    filtered = df[(df['Accession'] == accession) & (df['Name'] == name)].copy()
-    if filtered.empty:
-        return []
-
-    filtered = filtered.fillna('')
-    records = []
-    for _, row in filtered.iterrows():
-        row_dict = {str(col): str(row[col]) for col in filtered.columns}
-        records.append(row_dict)
-
-    return records
-
-
 def get_pathway_dataset_records(dataset):
     """Get the full dataset rows for the selected pathway source."""
     dataset = (dataset or '').strip().lower()

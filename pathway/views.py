@@ -6,7 +6,6 @@ from gene.data_loader import (
     get_pathway_datasets,
     get_pathway_terms,
     get_genes_for_pathway_term,
-    get_pathway_records_for_term,
     get_pathway_dataset_records,
 )
 from .models import StarredGene
@@ -60,7 +59,6 @@ def get_term_genes(request):
             return JsonResponse({'error': 'Dataset, accession, and term name are required.'}, status=400)
 
         genes = get_genes_for_pathway_term(dataset, accession, term_name)
-        records = get_pathway_records_for_term(dataset, accession, term_name)
         starred_ids = set(StarredGene.objects.values_list('PAO1_ID', flat=True))
 
         for gene in genes:
@@ -68,7 +66,6 @@ def get_term_genes(request):
 
         return JsonResponse({
             'genes': genes,
-            'records': records,
             'selected_term': {
                 'dataset': dataset,
                 'accession': accession,
