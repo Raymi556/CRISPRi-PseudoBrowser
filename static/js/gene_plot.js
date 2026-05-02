@@ -567,22 +567,10 @@ function createGuidesTable(guides) {
         ordering: true,
         order: [[4, 'asc']], // Sort by LFC (column 4) ascending by default
         lengthMenu: [10, 25, 50],
-        layout: {
-            topEnd: 'search'
-        },
-        buttons: [
-            {
-                extend: 'copy',
-                className: 'btn btn-secondary',
-                text: 'Copy'
+            layout: {
+                topStart: 'buttons',
+                topEnd: 'search'
             },
-            {
-                extend: 'csv',
-                className: 'btn btn-secondary',
-                text: 'Download CSV',
-                filename: `guides_${currentData.target_gene.gene_name}_${Date.now()}`
-            }
-        ],
         columnDefs: [
             {
                 targets: '_all',
