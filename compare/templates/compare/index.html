@@ -6,26 +6,14 @@
 {% block content %}
 <div class="page-header">
     <h1>Gene Set Comparison</h1>
-    <p>Review starred genes, remove entries, and render a placeholder clustered heatmap.</p>
+    <p>Review starred genes, remove entries, and render a clustered heatmap across all conditions.</p>
 </div>
 
-<div class="grid" style="grid-template-columns: 1fr 2fr;">
-    <div class="card" style="min-height: 800px;">
+<div class="grid" style="grid-template-columns: 1fr 2fr; align-items: start;">
+    <div class="card" style="min-height: 0;">
         <div class="card-header">Starred Genes</div>
 
-        <div id="starred-genes-container" style="max-height: 460px; overflow-y: auto; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.75rem; background-color: var(--input-bg); margin-bottom: 1rem;"></div>
-
-        <div class="form-group">
-            <label for="condition-select" class="form-label">Conditions For Heatmap</label>
-            <select id="condition-select" class="form-control" multiple size="12" style="height: auto;">
-                {% for condition in conditions %}
-                <option value="{{ condition }}" {% if condition in default_conditions %}selected{% endif %}>{{ condition }}</option>
-                {% endfor %}
-            </select>
-            <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem;">
-                Hold Ctrl/Cmd for multi-select.
-            </small>
-        </div>
+        <div id="starred-genes-container" style="max-height: 360px; overflow-y: auto; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.75rem; background-color: var(--input-bg); margin-bottom: 1rem;"></div>
 
         <button id="refresh-heatmap" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">Generate Heatmap</button>
 
@@ -33,12 +21,16 @@
         <div id="compare-error" class="message message-error" style="display: none; margin-top: 1rem;"></div>
     </div>
 
-    <div class="card" style="min-height: 800px;">
-        <div class="card-header">Heatmap + Hierarchy Placeholder</div>
-        <div id="heatmap-plot" style="height: 520px;"></div>
-        <div id="hierarchy-placeholder" class="message message-info" style="margin-top: 1rem;">
-            Hierarchy tree placeholder will be replaced by real clustering in a future update.
+    <div class="card" style="min-height: 0; display: flex; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div class="card-header" style="margin: 0;">Heatmap + Gene Clustering Tree</div>
+            <button id="download-plot" class="btn btn-secondary">Download Plot</button>
         </div>
+        <div id="compare-loading" class="loading" style="display: none; min-height: 560px; padding: 0;">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem;">Loading heatmap...</p>
+        </div>
+        <div id="heatmap-plot" style="height: 560px;"></div>
     </div>
 </div>
 {% endblock %}
@@ -47,8 +39,8 @@
 <script>
     window.COMPARE_STARRED_URL = "{% url 'compare:starred_genes' %}";
     window.COMPARE_REMOVE_STARRED_URL = "{% url 'compare:remove_starred_gene' %}";
-    window.COMPARE_DUMMY_HEATMAP_URL = "{% url 'compare:dummy_heatmap' %}";
+    window.COMPARE_HEATMAP_URL = "{% url 'compare:heatmap' %}";
     window.CSRF_TOKEN = '{{ csrf_token }}';
 </script>
-<script src="{% static 'js/compare_browser.js' %}?v=202604301"></script>
+<script src="{% static 'js/compare_browser.js' %}?v=202605022"></script>
 {% endblock %}
