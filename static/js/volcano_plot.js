@@ -8,6 +8,12 @@ let currentData = null;
 let lfcThresholdSlider = null;
 let fdrThresholdSlider = null;
 
+function setHidden(element, hidden) {
+    if (element) {
+        element.hidden = hidden;
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Condition browser initializing...');
@@ -198,7 +204,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
     plotDiv.innerHTML = '';
     
     if (!data.records || data.records.length === 0) {
-        plotDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No data available for this condition</p>';
+        plotDiv.innerHTML = '<p class="empty-state">No data available for this condition</p>';
         return;
     }
     
@@ -382,7 +388,7 @@ function createGenesTable(records) {
     const tableContainer = document.getElementById('genes-table-container');
     
     if (!records || records.length === 0) {
-        tableContainer.innerHTML = '<p style="color: var(--text-secondary);">No genes available</p>';
+        tableContainer.innerHTML = '<p class="empty-state">No genes available</p>';
         return;
     }
 
@@ -394,14 +400,14 @@ function createGenesTable(records) {
     
     // Create table HTML
     let tableHTML = `
-        <table class="table" id="genes-datatable" style="text-align: left;">
+        <table class="table table--full-width" id="genes-datatable">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Gene Name</th>
-                    <th style="text-align: left;">PAO1 ID</th>
-                    <th style="text-align: left;">Log2 FC</th>
-                    <th style="text-align: left;">FDR</th>
-                    <th style="text-align: left;">Product</th>
+                    <th>Gene Name</th>
+                    <th>PAO1 ID</th>
+                    <th>Log2 FC</th>
+                    <th>FDR</th>
+                    <th>Product</th>
                 </tr>
             </thead>
             <tbody>
@@ -411,11 +417,11 @@ function createGenesTable(records) {
         const geneLink = `/gene/?gene=${encodeURIComponent(record.gene_name)}&condition=${encodeURIComponent(currentData.condition)}`;
         tableHTML += `
             <tr>
-                <td style="color: var(--text-primary); text-align: left;"><a href="${geneLink}" style="color: var(--accent-red); text-decoration: none; cursor: pointer;">${record.gene_name}</a></td>
-                <td style="color: var(--text-secondary); font-size: 0.85rem; text-align: left;">${record.PAO1_ID}</td>
-                <td style="color: var(--text-primary); text-align: left;">${record.lfc.toFixed(3)}</td>
-                <td style="color: var(--text-secondary); text-align: left;" data-order="${record.fdr}">${record.fdr.toExponential(2)}</td>
-                <td style="color: var(--text-secondary); font-size: 0.85rem; text-align: left;">${record.product_name || '-'}</td>
+                <td class="table-cell-primary"><a href="${geneLink}" class="table-link">${record.gene_name}</a></td>
+                <td class="table-cell-secondary table-cell-secondary--small">${record.PAO1_ID}</td>
+                <td class="table-cell-primary">${record.lfc.toFixed(3)}</td>
+                <td class="table-cell-secondary" data-order="${record.fdr}">${record.fdr.toExponential(2)}</td>
+                <td class="table-cell-secondary table-cell-secondary--small">${record.product_name || '-'}</td>
             </tr>
         `;
     });
@@ -450,17 +456,17 @@ function createGenesTable(records) {
 function showError(message) {
     const errorDiv = document.getElementById('error-message');
     errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
+    setHidden(errorDiv, false);
 }
 
 function hideError() {
     const errorDiv = document.getElementById('error-message');
-    errorDiv.style.display = 'none';
+    setHidden(errorDiv, true);
 }
 
 function showLoading(show) {
     const loadingDiv = document.getElementById('loading');
-    loadingDiv.style.display = show ? 'block' : 'none';
+    setHidden(loadingDiv, !show);
 }
 
 function showPlots() {
@@ -468,9 +474,9 @@ function showPlots() {
     const volcanoCard = document.getElementById('volcano-info-card');
     const tableWrapper = document.getElementById('table-wrapper');
     
-    plotsContainer.style.display = 'block';
-    volcanoCard.style.display = 'block';
-    tableWrapper.style.display = 'block';
+    setHidden(plotsContainer, false);
+    setHidden(volcanoCard, false);
+    setHidden(tableWrapper, false);
 }
 
 function hidePlots() {
@@ -478,7 +484,7 @@ function hidePlots() {
     const volcanoCard = document.getElementById('volcano-info-card');
     const tableWrapper = document.getElementById('table-wrapper');
     
-    plotsContainer.style.display = 'none';
-    volcanoCard.style.display = 'none';
-    tableWrapper.style.display = 'none';
+    setHidden(plotsContainer, true);
+    setHidden(volcanoCard, true);
+    setHidden(tableWrapper, true);
 }

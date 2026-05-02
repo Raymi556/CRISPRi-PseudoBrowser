@@ -9,9 +9,9 @@
     <p>Explore volcano plots for experimental conditions and identify significant hits</p>
 </div>
 
-<div class="grid" style="grid-template-columns: 1fr 2fr;">
-    <!-- Control Panel -->
-    <div class="card" style="min-height: 800px">
+<div class="content-grid content-grid--two">
+    <!-- Control panel: same shell as the gene browser, with thresholds controlled by shared sliders. -->
+    <div class="card card--form">
         <div class="card-header">Volcano Plot Controls</div>
         
         <form id="volcano-form">
@@ -51,7 +51,7 @@
                     max="5"
                     step="0.001"
                 >
-                <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                <small class="form-hint">
                     Genes with |LFC| ≥ threshold are highlighted
                 </small>
             </div>
@@ -75,42 +75,42 @@
                     max="5"
                     step="0.001"
                 >
-                <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                <small class="form-hint">
                     The horizontal threshold bar uses the plotted -log10(FDR) scale
                 </small>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
+            <button type="submit" class="btn btn-primary full-width">
                 Generate Plot
             </button>
         </form>
 
-        <div id="error-message" class="message message-error" style="display: none; margin-top: 1rem;">
+        <div id="error-message" class="message message-error message--spaced" hidden>
         </div>
     </div>
 
-    <div id="loading" class="loading" style="display: none;">
+    <div id="loading" class="loading" hidden>
         <div class="spinner"></div>
-        <p style="margin-top: 1rem;">Loading data...</p>
+        <p class="mt-2">Loading data...</p>
     </div>
 
     <!-- Plot Card -->
-    <div class="card" id="volcano-info-card" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div class="card-header" style="margin: 0;">Volcano Plot</div>
+    <div class="card card--stacked" id="volcano-info-card" hidden>
+        <div class="card-header-row">
+            <div class="card-header card-header--flush">Volcano Plot</div>
             <button id="download-plot" class="btn btn-secondary">Download Plot</button>
         </div>
-        <div class="plot-container" id="plots-container" style="display: none;">
-            <div id="volcano-plot" style="height: 700px;"></div>
+        <div class="plot-container plot-area--auto" id="plots-container" hidden>
+            <div id="volcano-plot" class="plot-area--tall"></div>
         </div>
     </div>
 </div>
 
 <!-- Gene Selection Table - Full Width -->
-<div id="table-wrapper" style="display: none;">
+<div id="table-wrapper" hidden>
     <div class="table-container">
-        <div style="margin-bottom: 1rem;">
-            <h3 style="color: var(--text-primary); margin: 0 0 1rem 0;">Significant Genes</h3>
+        <div class="section-body--tight section-body--flush mb-2">
+            <h3 class="text-primary mb-2">Significant Genes</h3>
         </div>
         <div id="genes-table-container"></div>
     </div>
@@ -120,7 +120,7 @@
 
 {% block extra_js %}
 <script>
-    // Initialize the condition browser with Django context
+    // The condition browser reads these globals during its own startup sequence.
     window.CONDITIONS = {{ conditions|safe }};
     window.VOLCANO_DATA_URL = "{% url 'condition:get_volcano_data' %}";
     window.CSRF_TOKEN = '{{ csrf_token }}';

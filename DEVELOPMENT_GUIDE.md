@@ -5,8 +5,8 @@
 **CRISPRi-PseudoBrowser** is a Django-based web application for exploring CRISPR interference (CRISPRi) guide effects in *Pseudomonas aeruginosa* genomic context. It provides interactive data visualization tools for analyzing gene expression, guide effects, and comparative studies across experimental conditions.
 
 **Key Technologies:**
-- Backend: Django 3.x with Python 3.8+
-- Frontend: Plotly.js 2.27.0 for interactive visualizations, DataTables for data tables
+- Backend: Django 5.x with Python 3.11+
+- Frontend: Plotly.js 2.27.0 for interactive visualizations, DataTables 2.3.x for data tables
 - Data Format: Tab-separated values (TSV) files in `dataFiles/`
 - Styling: Custom CSS with CSS variables for dark theme
 
@@ -38,6 +38,16 @@ The application follows a **minimalist dark theme** using CSS variables defined 
 - **Minimal borders**: Subtle `#333333` borders to delineate sections
 - **Consistent spacing**: 1.5rem gap in grid layouts, consistent padding in cards
 
+### Shared Template Classes
+
+Templates should prefer shared classes from `static/css/main.css` instead of inline styling. The core pattern is:
+- Layout shells: `page-header--centered`, `content-grid--two`, `content-grid--two-start`, `card--compact`, `card--form`, `card--form-large`
+- Common copy and controls: `section-body`, `form-hint`, `full-width`, `text-muted`, `text-primary`, `link-accent`
+- Reusable panels: `list-box`, `feature-callout`, `step-list`, `site-footer`, `loading--compact`
+- State handling: use the HTML `hidden` attribute for panels that are shown or hidden by JavaScript
+
+Feature pages should treat presentation as a shared concern: gene, condition, pathway, and compare now all use the same card, grid, and message classes, and the JS files only toggle visibility or populate content.
+
 ### Component Styling
 
 **Cards** (`.card`):
@@ -46,28 +56,33 @@ The application follows a **minimalist dark theme** using CSS variables defined 
 - Padding: 1.5rem
 - Border-radius: 8px
 - Minimum height: 700px (for control panels)
+- Modifiers: `card--compact`, `card--form`, `card--form-large`, `card--stacked`, `card--section`
 
 **Buttons** (`.btn`):
 - Primary (`.btn-primary`): Red background, white text, hover lifting effect
 - Secondary (`.btn-secondary`): Dark tertiary background with border
 - All buttons use 0.2s ease transition
+- Common modifiers: `btn--large`, `btn--tight`, `btn--spaced-bottom`
 
 **Forms** (`.form-control`):
 - Background: `--input-bg`
 - Border: 1px `--input-border`
 - Focus: Red border with red shadow (3px rgba 220,38,38,0.1)
 - Padding: 0.75rem 1rem
+- Use `form-group--relative`, `form-control--auto-height`, and `form-hint` to keep repeated form structure consistent.
 
 **Tables** (`.table`):
 - Headers: Dark tertiary background, 2px bottom border in `--border-color`
 - Rows: 1px bottom border, light secondary text
 - Row hover: Red tint background (rgba 220,38,38,0.05)
 - Text alignment: Left for all cells
+- Shared table helpers now include `table--full-width`, `table-container--flush`, `table-link`, `table-cell-primary`, and `table-cell-secondary`.
 
 **Layouts:**
 - Grid system: `.grid-2` for 2-column layouts (controls flex 1, plot flex 2)
 - Responsive: Collapses to 1 column on screens < 768px
 - Scrollable tables with `.table-container` wrapper
+- Use the shared content-grid helpers for page layouts instead of per-template inline `grid-template-columns` declarations.
 
 ---
 
@@ -381,6 +396,12 @@ constructor(sliderId, inputId, options = {})
 
 **Options:**
 - `min`: Minimum value (default: 0)
+
+### static/js/page scripts
+
+- `gene_plot.js`, `volcano_plot.js`, `pathway_browser.js`, and `compare_browser.js` now own feature behavior and only toggle `hidden` on their panels.
+- Page-specific Django values are still exposed in small `extra_js` blocks, but the blocks should not contain layout logic.
+- `gene_autocomplete.js` owns its dropdown visibility with `hidden` rather than direct `display` mutation.
 - `max`: Maximum value (default: 100)
 - `step`: Step size (default: 1)
 - `decimals`: Decimal places to display (default: 0)

@@ -51,38 +51,38 @@
 
     {% block extra_js %}{% endblock %}
 
-    <!-- Footer -->
-    <footer style="background-color: var(--bg-secondary); border-top: 2px solid var(--border-color); margin-top: 4rem; padding: 0rem 0;">
+    <!-- Footer: shared contact and attribution block styled from main.css -->
+    <footer class="site-footer">
         <div class="container">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 1.5rem;">
+            <div class="site-footer__grid">
                 <div>
-                    <p style="margin: 0 0 0.5rem 0; color: var(--text-primary);">
-                        &copy; 2026 by Laboratory of Molecular Microbiology and Bacterial Genetics, <a href="https://ibb.edu.pl/en/" style="color: var(--accent-red); text-decoration: none;">IBB PAS</a>
+                    <p class="site-footer__line text-primary">
+                        &copy; 2026 by Laboratory of Molecular Microbiology and Bacterial Genetics, <a href="https://ibb.edu.pl/en/" class="site-footer__link">IBB PAS</a>
                     </p>
-                    <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                    <p class="site-footer__line site-footer__line--sm text-muted">
                         Browser currently in α version: 0.1.0
                     </p>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
-                        Developed by <a href="https://github.com/Raymi556" style="color: var(--accent-red); text-decoration: none;">Raymi E. Goitia-Camacho</a>
+                    <p class="site-footer__line--tight site-footer__line--sm text-muted">
+                        Developed by <a href="https://github.com/Raymi556" class="site-footer__link">Raymi E. Goitia-Camacho</a>
                     </p>
                 </div>
                 
-                <div style="text-align: right;">
-                    <p style="margin: 0 0 0.75rem 0; color: var(--text-primary); font-weight: 600;">Contact</p>
-                    <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                <div class="site-footer__column--right">
+                    <p class="site-footer__line--spaced site-footer__title text-primary">Contact</p>
+                    <p class="site-footer__line site-footer__line--sm text-muted">
                         <strong>Email:</strong>
-                        <a href="mailto:a.kawalek@ibb.waw.pl" style="color: var(--accent-red); text-decoration: none;">a.kawalek@ibb.waw.pl</a> • 
-                        <a href="mailto:rgoitia@ibb.waw.pl" style="color: var(--accent-red); text-decoration: none;">rgoitia@ibb.waw.pl</a>
+                        <a href="mailto:a.kawalek@ibb.waw.pl" class="site-footer__link">a.kawalek@ibb.waw.pl</a> • 
+                        <a href="mailto:rgoitia@ibb.waw.pl" class="site-footer__link">rgoitia@ibb.waw.pl</a>
                     </p>
-                    <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                    <p class="site-footer__line site-footer__line--sm text-muted">
                         Institute of Biochemistry and Biophysics PAS
                     </p>
-                    <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                    <p class="site-footer__line site-footer__line--sm text-muted">
                         Pawińskiego 5a, 02-106 Warsaw, Poland
                     </p>
-                    <p style="margin: 0; font-size: 0.9rem;">
+                    <p class="site-footer__line--tight site-footer__line--sm">
                         <img src="{% static 'images/map-pin.svg' %}" alt="Maps" width="16" height="16" class="me-1">
-                        <a href="https://goo.gl/maps/fVhJiguSAyP6gMGBA" target="_blank" style="color: var(--accent-red); text-decoration: none;">View on Maps</a>
+                        <a href="https://goo.gl/maps/fVhJiguSAyP6gMGBA" target="_blank" class="site-footer__link">View on Maps</a>
                     </p>
                 </div>
             </div>

@@ -9,8 +9,9 @@
     <p>Select COG or GO terms, inspect matching genes, and sync starred genes for compare.</p>
 </div>
 
-<div class="grid" style="grid-template-columns: 1fr 2fr;">
-    <div class="card" style="min-height: 680px; min-width: 400px">
+<div class="content-grid content-grid--two">
+    <!-- Left panel: fixed-width controls and term search, shared with the compare and condition pages. -->
+    <div class="card card--form-large card--wide">
         <div class="card-header">Pathway Selection</div>
 
         <form id="pathway-form">
@@ -32,28 +33,28 @@
                     placeholder="Type GO:0005524 or ATP binding"
                     autocomplete="off"
                 >
-                <div id="term-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
-                <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem;">
+                <div id="term-dropdown" class="autocomplete-dropdown" hidden></div>
+                <small class="form-hint form-hint--slightly-lower">
                     Pick one suggestion to load linked genes.
                 </small>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Genes Linked To Selected Term</label>
-                <div id="gene-checklist" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.75rem; background-color: var(--bg-primary);">
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Select a term to list genes.</div>
+                <div id="gene-checklist" class="list-box list-box--scroll list-box--medium list-box--panel">
+                    <div class="list-box__placeholder">Select a term to list genes.</div>
                 </div>
-                <small id="selection-count" style="color: var(--text-secondary); display: block; margin-top: 0.3rem;"></small>
+                <small id="selection-count" class="form-hint form-hint--slightly-lower"></small>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Import Selected Genes</button>
+            <button type="submit" class="btn btn-primary full-width">Import Selected Genes</button>
         </form>
 
-        <div id="pathway-message" class="message message-info" style="display: none; margin-top: 1rem;"></div>
-        <div id="pathway-error" class="message message-error" style="display: none; margin-top: 1rem;"></div>
+        <div id="pathway-message" class="message message-info message--spaced" hidden></div>
+        <div id="pathway-error" class="message message-error message--spaced" hidden></div>
     </div>
 
-    <div class="card" style="min-height: 680px;">
+    <div class="card card--form-large">
         <div id="dataset-records-title" class="card-header">Dataset Records</div>
         <div id="dataset-table-container"></div>
     </div>

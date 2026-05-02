@@ -1,35 +1,41 @@
 let starredGenes = [];
 
+function setHidden(element, hidden) {
+    if (element) {
+        element.hidden = hidden;
+    }
+}
+
 function showCompareMessage(text) {
     const box = document.getElementById('compare-message');
     box.textContent = text;
-    box.style.display = 'block';
+    setHidden(box, false);
 }
 
 function hideCompareMessage() {
     const box = document.getElementById('compare-message');
-    box.style.display = 'none';
+    setHidden(box, true);
 }
 
 function showCompareError(text) {
     const box = document.getElementById('compare-error');
     box.textContent = text;
-    box.style.display = 'block';
+    setHidden(box, false);
 }
 
 function hideCompareError() {
     const box = document.getElementById('compare-error');
-    box.style.display = 'none';
+    setHidden(box, true);
 }
 
 function showCompareLoading() {
     const loading = document.getElementById('compare-loading');
     const plot = document.getElementById('heatmap-plot');
     if (loading) {
-        loading.style.display = 'flex';
+        setHidden(loading, false);
     }
     if (plot) {
-        plot.style.display = 'none';
+        setHidden(plot, true);
     }
 }
 
@@ -37,10 +43,10 @@ function hideCompareLoading() {
     const loading = document.getElementById('compare-loading');
     const plot = document.getElementById('heatmap-plot');
     if (loading) {
-        loading.style.display = 'none';
+        setHidden(loading, true);
     }
     if (plot) {
-        plot.style.display = 'block';
+        setHidden(plot, false);
     }
 }
 
@@ -48,7 +54,7 @@ function renderStarredGenes() {
     const container = document.getElementById('starred-genes-container');
 
     if (!starredGenes.length) {
-        container.innerHTML = '<div style="color: var(--text-secondary);">No starred genes yet. Add genes from Pathway tab.</div>';
+        container.innerHTML = '<div class="empty-state">No starred genes yet. Add genes from Pathway tab.</div>';
         return;
     }
 
@@ -56,13 +62,13 @@ function renderStarredGenes() {
         const label = gene.gene_name ? `${gene.gene_name} (${gene.PAO1_ID})` : gene.PAO1_ID;
         const source = `${gene.source_dataset || ''} ${gene.source_accession || ''}`.trim();
         return `
-            <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 0.7rem; margin-bottom: 0.6rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.7rem;">
+            <div class="list-box__item compare-gene-card">
+                <div class="compare-gene-row">
                     <div>
-                        <div style="color: var(--text-primary); font-weight: 600;">${label}</div>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem;">${source}</div>
+                        <div class="text-primary font-semibold">${label}</div>
+                        <div class="text-muted text-sm">${source}</div>
                     </div>
-                    <button class="btn btn-secondary remove-starred-btn" data-pao1-id="${gene.PAO1_ID}" style="padding: 0.35rem 0.7rem;">Remove</button>
+                    <button class="btn btn-secondary remove-starred-btn btn--tight" data-pao1-id="${gene.PAO1_ID}">Remove</button>
                 </div>
             </div>
         `;

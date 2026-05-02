@@ -3,6 +3,12 @@ let currentGenes = [];
 let searchDebounce = null;
 let datasetTable = null;
 
+function setHidden(element, hidden) {
+    if (element) {
+        element.hidden = hidden;
+    }
+}
+
 async function fetchJson(url, options = {}) {
     const response = await fetch(url, options);
     const raw = await response.text();
@@ -51,23 +57,23 @@ function updateDatasetTitle() {
 function showPathwayMessage(text) {
     const box = document.getElementById('pathway-message');
     box.textContent = text;
-    box.style.display = 'block';
+    setHidden(box, false);
 }
 
 function hidePathwayMessage() {
     const box = document.getElementById('pathway-message');
-    box.style.display = 'none';
+    setHidden(box, true);
 }
 
 function showPathwayError(text) {
     const box = document.getElementById('pathway-error');
     box.textContent = text;
-    box.style.display = 'block';
+    setHidden(box, false);
 }
 
 function hidePathwayError() {
     const box = document.getElementById('pathway-error');
-    box.style.display = 'none';
+    setHidden(box, true);
 }
 
 function updateSelectionCount() {
@@ -85,7 +91,7 @@ function renderGenes(genes) {
     const container = document.getElementById('gene-checklist');
 
     if (!genes.length) {
-        container.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem;">No genes found for this term.</div>';
+        container.innerHTML = '<div class="list-box__placeholder">No genes found for this term.</div>';
         updateSelectionCount();
         return;
     }
@@ -94,10 +100,10 @@ function renderGenes(genes) {
         const label = gene.gene_name ? `${gene.gene_name} (${gene.PAO1_ID})` : gene.PAO1_ID;
         const checked = gene.starred ? 'checked' : '';
         return `
-            <label style="display: block; margin-bottom: 0.5rem; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; background-color: var(--bg-secondary);">
+            <label class="list-box__item">
                 <input type="checkbox" class="pathway-gene-checkbox" value="${gene.PAO1_ID}" data-gene-name="${gene.gene_name || ''}" ${checked}>
-                <span style="margin-left: 0.5rem; color: var(--text-primary);">${label}</span>
-                <span style="display: block; margin-left: 1.65rem; color: var(--text-secondary); font-size: 0.85rem;">${gene.product_name || 'No product name available'}</span>
+                <span class="list-box__item-text">${label}</span>
+                <span class="list-box__item-meta">${gene.product_name || 'No product name available'}</span>
             </label>
         `;
     });
@@ -120,7 +126,7 @@ function renderDatasetTable(records) {
     }
 
     if (!records.length) {
-        container.innerHTML = '<div style="color: var(--text-secondary);">No dataset rows available.</div>';
+        container.innerHTML = '<div class="empty-state">No dataset rows available.</div>';
         return;
     }
 
@@ -149,7 +155,7 @@ function renderDatasetTable(records) {
                     if (key === 'Accession' || key === 'Name') {
                         return `
                             <td>
-                                <a href="#" class="dataset-term-link" data-accession="${escapeHtml(accession)}" data-name="${escapeHtml(name)}" style="color: var(--accent-red); text-decoration: none;">
+                                <a href="#" class="dataset-term-link table-link" data-accession="${escapeHtml(accession)}" data-name="${escapeHtml(name)}">
                                     ${escapeHtml(value)}
                                 </a>
                             </td>
@@ -168,8 +174,8 @@ function renderDatasetTable(records) {
     `).join('');
 
     container.innerHTML = `
-        <div class="table-container" style="padding: 0; margin: 0; border: none; background: transparent;">
-            <table id="pathway-dataset-table" class="table display" style="width: 100%;">
+        <div class="table-container table-container--flush">
+            <table id="pathway-dataset-table" class="table table--full-width display">
                 <thead><tr>${headers.map(key => `<th>${escapeHtml(key)}</th>`).join('')}</tr></thead>
                 <tfoot><tr>${footer}</tr></tfoot>
                 <tbody>${body}</tbody>
@@ -255,7 +261,7 @@ function showTermDropdown(terms) {
     const dropdown = document.getElementById('term-dropdown');
 
     if (!terms.length) {
-        dropdown.style.display = 'none';
+        setHidden(dropdown, true);
         dropdown.innerHTML = '';
         return;
     }
@@ -268,14 +274,14 @@ function showTermDropdown(terms) {
     `).join('');
 
     dropdown.innerHTML = html;
-    dropdown.style.display = 'block';
+    setHidden(dropdown, false);
 
     dropdown.querySelectorAll('.pathway-term-item').forEach(item => {
         item.addEventListener('click', async () => {
             const accession = item.dataset.accession;
             const name = item.dataset.name;
             document.getElementById('term-search').value = `${accession} - ${name}`;
-            dropdown.style.display = 'none';
+            setHidden(dropdown, true);
 
             try {
                 await loadGenesForTerm({accession, name});
@@ -338,7 +344,7 @@ function resetTermUI() {
     selectedTerm = null;
     currentGenes = [];
     document.getElementById('term-search').value = '';
-    document.getElementById('term-dropdown').style.display = 'none';
+    setHidden(document.getElementById('term-dropdown'), true);
     renderGenes([]);
     hidePathwayError();
     hidePathwayMessage();
@@ -373,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('term-dropdown');
         if (!dropdown.contains(event.target) && event.target !== termSearch) {
-            dropdown.style.display = 'none';
+            setHidden(dropdown, true);
         }
     });
 

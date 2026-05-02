@@ -288,6 +288,7 @@ input[type="number"].form-control {
 
 /* Loading Spinner */
 .loading {
+    display: flex;
     text-align: center;
     flex-direction: column;
     align-items: center;
@@ -295,6 +296,10 @@ input[type="number"].form-control {
     padding: 3rem;
     min-height: 700px;
     color: var(--text-secondary);
+}
+
+.loading[hidden] {
+    display: none !important;
 }
 
 .spinner {
@@ -805,4 +810,505 @@ input[type="range"]::-moz-range-thumb:hover {
     font-weight: 600;
     color: var(--text-primary);
     border-bottom: 1px solid var(--border-color);
+}
+
+/* Shared Layout Helpers
+ * These classes keep the templates declarative and reduce page-specific inline styles.
+ */
+.page-header--centered {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-title--hero {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.card--section {
+    margin-bottom: 2rem;
+}
+
+.card--compact {
+    min-height: 0;
+}
+
+.card--form {
+    min-height: 800px;
+}
+
+.card--form-large {
+    min-height: 680px;
+}
+
+.card--wide {
+    min-width: 400px;
+}
+
+.card--stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.card-header--flush {
+    margin: 0;
+}
+
+.card-header--large {
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+.section-body {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.section-body--tight {
+    padding: 1.5rem;
+}
+
+.section-body--flush {
+    padding: 0;
+}
+
+.content-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.content-grid--compact {
+    gap: 1rem;
+}
+
+.content-grid--spacious {
+    gap: 3rem;
+}
+
+.content-grid--two {
+    grid-template-columns: 1fr 2fr;
+}
+
+.content-grid--two-start {
+    grid-template-columns: 1fr 2fr;
+    align-items: start;
+}
+
+.content-grid--one {
+    grid-template-columns: 1fr;
+}
+
+.content-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.content-stack--small {
+    gap: 0.5rem;
+}
+
+.form-group--relative {
+    position: relative;
+}
+
+.form-control--auto-height {
+    height: auto;
+}
+
+.form-hint {
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.form-hint--slightly-lower {
+    margin-top: 0.3rem;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.btn--large {
+    font-size: 1.1rem;
+    padding: 1rem 2.5rem;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn--tight {
+    padding: 0.35rem 0.7rem;
+}
+
+.btn--spaced-bottom {
+    margin-bottom: 1rem;
+}
+
+.empty-state {
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.empty-state--compact {
+    padding: 1rem 0;
+}
+
+.gene-info-table {
+    width: 100%;
+    font-size: 0.85rem;
+    border-collapse: collapse;
+    line-height: 1.25;
+}
+
+.gene-info-label {
+    color: var(--text-secondary);
+    padding: 0.3rem 0;
+    font-size: 1rem;
+}
+
+.gene-info-value {
+    color: var(--text-primary);
+    padding: 0.3rem 0;
+    font-size: 1rem;
+}
+
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-muted {
+    color: var(--text-secondary);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-accent {
+    color: var(--accent-red);
+}
+
+.text-sm {
+    font-size: 0.9rem;
+}
+
+.text-md {
+    font-size: 1.1rem;
+}
+
+.text-lg {
+    font-size: 1.25rem;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.line-height-loose {
+    line-height: 1.8;
+}
+
+.line-height-normal {
+    line-height: 1.6;
+}
+
+.link-accent {
+    color: var(--accent-red);
+    text-decoration: none;
+}
+
+.link-accent:hover {
+    color: var(--accent-red-hover);
+}
+
+.code-chip {
+    background-color: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.feature-callout {
+    background-color: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent-red);
+}
+
+.feature-callout__title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.feature-list {
+    margin: 0.5rem 0 0 1.5rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.step-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.step-badge {
+    background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-dark) 100%);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4);
+}
+
+.step-badge--tilt-left {
+    transform: rotate(-3deg);
+}
+
+.step-badge--tilt-right {
+    transform: rotate(3deg);
+}
+
+.step-badge--tilt-left-small {
+    transform: rotate(-2deg);
+}
+
+.step-badge--tilt-right-small {
+    transform: rotate(2deg);
+}
+
+.step-content h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.step-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.table-container--flush {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+
+.table--full-width {
+    width: 100%;
+}
+
+.table-link {
+    color: var(--accent-red);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.table-link:hover {
+    color: var(--accent-red-hover);
+}
+
+.lfc-positive {
+    color: var(--accent-red);
+}
+
+.lfc-negative {
+    color: #16a34a;
+}
+
+.lfc-neutral {
+    color: var(--text-secondary);
+}
+
+.table-cell-primary {
+    color: var(--text-primary);
+}
+
+.table-cell-secondary {
+    color: var(--text-secondary);
+}
+
+.table-cell-secondary--small {
+    font-size: 0.85rem;
+}
+
+.list-box {
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 0.75rem;
+}
+
+.list-box--scroll {
+    overflow-y: auto;
+}
+
+.list-box--tall {
+    max-height: 360px;
+}
+
+.list-box--medium {
+    max-height: 280px;
+}
+
+.list-box--input {
+    background-color: var(--input-bg);
+}
+
+.list-box--panel {
+    background-color: var(--bg-primary);
+}
+
+.list-box__placeholder {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.list-box__item {
+    display: block;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--bg-secondary);
+}
+
+.list-box__item-text {
+    margin-left: 0.5rem;
+    color: var(--text-primary);
+}
+
+.list-box__item-meta {
+    display: block;
+    margin-left: 1.65rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.compare-gene-card {
+    margin-bottom: 0.6rem;
+    padding: 0.7rem;
+}
+
+.compare-gene-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.site-footer {
+    background-color: var(--bg-secondary);
+    border-top: 2px solid var(--border-color);
+    margin-top: 4rem;
+    padding: 0;
+}
+
+.site-footer__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.site-footer__column--right {
+    text-align: right;
+}
+
+.site-footer__line {
+    margin: 0 0 0.5rem 0;
+}
+
+.site-footer__line--tight {
+    margin: 0;
+}
+
+.site-footer__line--spaced {
+    margin: 0 0 0.75rem 0;
+}
+
+.site-footer__line--sm {
+    font-size: 0.9rem;
+}
+
+.site-footer__title {
+    font-weight: 600;
+}
+
+.site-footer__link {
+    color: var(--accent-red);
+    text-decoration: none;
+}
+
+.site-footer__link:hover {
+    color: var(--accent-red-hover);
+}
+
+.loading--compact {
+    min-height: 560px;
+    padding: 0;
+}
+
+.plot-area--tall {
+    height: 700px;
+}
+
+.plot-area--compact {
+    height: 560px;
+}
+
+.plot-area--auto {
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+    .content-grid--two,
+    .content-grid--two-start,
+    .site-footer__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .site-footer__column--right {
+        text-align: left;
+    }
+
+    .card-header-row {
+        align-items: flex-start;
+    }
+
+    .page-header--centered {
+        margin-bottom: 2rem;
+    }
 }

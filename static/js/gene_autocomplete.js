@@ -38,8 +38,7 @@ class GeneAutocomplete {
     createDropdown() {
         this.dropdown = document.createElement('div');
         this.dropdown.className = 'autocomplete-dropdown';
-        this.dropdown.style.display = 'none';
-        this.input.parentNode.style.position = 'relative';
+        this.dropdown.hidden = true;
         this.input.parentNode.appendChild(this.dropdown);
     }
     
@@ -226,16 +225,16 @@ class GeneAutocomplete {
     }
     
     showDropdown() {
-        this.dropdown.style.display = 'block';
+        this.dropdown.hidden = false;
     }
     
     hideDropdown() {
-        this.dropdown.style.display = 'none';
+        this.dropdown.hidden = true;
         this.selectedIndex = -1;
     }
     
     isDropdownVisible() {
-        return this.dropdown.style.display === 'block';
+        return !this.dropdown.hidden;
     }
     
     getRecentGenes() {

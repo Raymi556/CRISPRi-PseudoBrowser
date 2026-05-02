@@ -9,28 +9,29 @@
     <p>Review starred genes, remove entries, and render a clustered heatmap across all conditions.</p>
 </div>
 
-<div class="grid" style="grid-template-columns: 1fr 2fr; align-items: start;">
-    <div class="card" style="min-height: 0;">
+<div class="content-grid content-grid--two-start">
+    <!-- Starred-gene list: compact panel that stays aligned with the heatmap controls. -->
+    <div class="card card--compact">
         <div class="card-header">Starred Genes</div>
 
-        <div id="starred-genes-container" style="max-height: 360px; overflow-y: auto; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.75rem; background-color: var(--input-bg); margin-bottom: 1rem;"></div>
+        <div id="starred-genes-container" class="list-box list-box--scroll list-box--tall list-box--input btn--spaced-bottom"></div>
 
-        <button id="refresh-heatmap" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">Generate Heatmap</button>
+        <button id="refresh-heatmap" class="btn btn-primary full-width btn--spaced-bottom">Generate Heatmap</button>
 
-        <div id="compare-message" class="message message-info" style="display: none; margin-top: 1rem;"></div>
-        <div id="compare-error" class="message message-error" style="display: none; margin-top: 1rem;"></div>
+        <div id="compare-message" class="message message-info message--spaced" hidden></div>
+        <div id="compare-error" class="message message-error message--spaced" hidden></div>
     </div>
 
-    <div class="card" style="min-height: 0; display: flex; flex-direction: column; gap: 1rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <div class="card-header" style="margin: 0;">Heatmap + Gene Clustering Tree</div>
+    <div class="card card--compact card--stacked">
+        <div class="card-header-row">
+            <div class="card-header card-header--flush">Heatmap + Gene Clustering Tree</div>
             <button id="download-plot" class="btn btn-secondary">Download Plot</button>
         </div>
-        <div id="compare-loading" class="loading" style="display: none; min-height: 560px; padding: 0;">
+        <div id="compare-loading" class="loading loading--compact" hidden>
             <div class="spinner"></div>
-            <p style="margin-top: 1rem;">Loading heatmap...</p>
+            <p class="mt-2">Loading heatmap...</p>
         </div>
-        <div id="heatmap-plot" style="height: 560px;"></div>
+        <div id="heatmap-plot" class="plot-area--compact"></div>
     </div>
 </div>
 {% endblock %}

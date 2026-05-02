@@ -8,6 +8,12 @@ let currentData = null;
 let geneAutocomplete = null;
 let windowSlider = null;
 
+function setHidden(element, hidden) {
+    if (element) {
+        element.hidden = hidden;
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Gene browser initializing...');
@@ -65,6 +71,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('Gene browser initialization complete');
+
+    if (window.AUTO_SUBMIT) {
+        setTimeout(function() {
+            const geneForm = document.getElementById('gene-form');
+            if (geneForm) {
+                geneForm.dispatchEvent(new Event('submit'));
+            }
+        }, 100);
+    }
 });
 
 /**
@@ -154,33 +169,33 @@ function displayGeneInfo(geneData) {
     const strand = geneData.strand === '+' ? 'Forward (+)' : 'Reverse (-)';
     
     infoContent.innerHTML = `
-        <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse; line-height: 1.25;">
+        <table class="gene-info-table">
             <tr>
-                <td class="gene-info-head"><strong>PAO1 ID:</strong></td>
-                <td class="gene-info-details">${geneData.PAO1_ID}</td>
+                <td class="gene-info-label"><strong>PAO1 ID:</strong></td>
+                <td class="gene-info-value">${geneData.PAO1_ID}</td>
             </tr>
             <tr>
-                <td class="gene-info-head"><strong>Gene Name:</strong></td>
-                <td class="gene-info-details">${geneData.gene_name}</td>
+                <td class="gene-info-label"><strong>Gene Name:</strong></td>
+                <td class="gene-info-value">${geneData.gene_name}</td>
             </tr>
             <tr>
-                <td class="gene-info-head"><strong>Location:</strong></td>
-                <td class="gene-info-details">${geneData.start.toLocaleString()} - ${geneData.end.toLocaleString()}</td>
+                <td class="gene-info-label"><strong>Location:</strong></td>
+                <td class="gene-info-value">${geneData.start.toLocaleString()} - ${geneData.end.toLocaleString()}</td>
             </tr>
             <tr>
-                <td class="gene-info-head"><strong>Strand:</strong></td>
-                <td class="gene-info-details">${strand}</td>
+                <td class="gene-info-label"><strong>Strand:</strong></td>
+                <td class="gene-info-value">${strand}</td>
             </tr>
             ${geneData.operon ? `
             <tr>
-                <td class="gene-info-head"><strong><strong>Operon:</strong></td>
-                <td class="gene-info-details">${geneData.operon}</td>
+                <td class="gene-info-label"><strong>Operon:</strong></td>
+                <td class="gene-info-value">${geneData.operon}</td>
             </tr>
             ` : ''}
         </table>
     `;
     
-    infoCard.style.display = 'block';
+    setHidden(infoCard, false);
 }
 
 /**
@@ -197,7 +212,7 @@ function createCombinedGenePlot(genes, guides, region) {
     plotDiv.innerHTML = '';
     
     if ((!genes || genes.length === 0) && (!guides || guides.length === 0)) {
-        plotDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No data available for this region</p>';
+        plotDiv.innerHTML = '<p class="empty-state">No data available for this region</p>';
         return;
     }
 
@@ -471,7 +486,7 @@ function createGuidesTable(guides) {
     const container = document.getElementById('guides-table-container');
     
     if (!guides || guides.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No guide data available</p>';
+        container.innerHTML = '<p class="empty-state">No guide data available</p>';
         return;
     }
     
@@ -482,7 +497,7 @@ function createGuidesTable(guides) {
     
     // Build table HTML
     let tableHTML = `
-        <table id="guidesDataTable" class="table display" style="width:100%;">
+        <table id="guidesDataTable" class="table table--full-width display">
             <thead>
                 <tr>
                     <th>Gene</th>
@@ -523,14 +538,14 @@ function createGuidesTable(guides) {
     });
     
     sortedGuides.forEach(guide => {
-        const lfcColor = getLFCColor(guide['LFC.adj']);
+        const lfcClass = guide['LFC.adj'] < -1 ? 'lfc-negative' : (guide['LFC.adj'] > 1 ? 'lfc-positive' : 'lfc-neutral');
         tableHTML += `
             <tr>
                 <td>${guide.gene_name}</td>
                 <td>${guide.PAO1_ID}</td>
-                <td><span style="font-size: 0.85em;">${guide.condition}</span></td>
-                <td><code style="font-size: 0.85em; background: #2a2a2a; padding: 2px 4px; border-radius: 3px;">${guide.spacer}</code></td>
-                <td style="color: ${lfcColor}; font-weight: 600;">${guide['LFC.adj'].toFixed(3)}</td>
+                <td><span class="text-sm">${guide.condition}</span></td>
+                <td><code class="code-chip text-sm">${guide.spacer}</code></td>
+                <td class="font-semibold ${lfcClass}">${guide['LFC.adj'].toFixed(3)}</td>
                 <td>${Math.round(guide.guide_center).toLocaleString()}</td>
                 <td>${guide.forward ? '+' : '-'}</td>
                 <td>${guide.mean_abund_50M ? guide.mean_abund_50M.toFixed(2) : 'N/A'}</td>
@@ -758,25 +773,25 @@ function getLFCColor(lfc) {
 function showError(message) {
     const errorDiv = document.getElementById('error-message');
     errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
+    setHidden(errorDiv, false);
 }
 
 function hideError() {
     const errorDiv = document.getElementById('error-message');
-    errorDiv.style.display = 'none';
+    setHidden(errorDiv, true);
 }
 
 function showLoading(show) {
     const loadingDiv = document.getElementById('loading');
-    loadingDiv.style.display = show ? 'flex' : 'none';
+    setHidden(loadingDiv, !show);
 }
 
 function showPlots() {
-    document.getElementById('plots-container').style.display = 'block';
-    document.getElementById('table-wrapper').style.display = 'block';
+    setHidden(document.getElementById('plots-container'), false);
+    setHidden(document.getElementById('table-wrapper'), false);
 }
 
 function hidePlots() {
-    document.getElementById('plots-container').style.display = 'none';
-    document.getElementById('table-wrapper').style.display = 'none';
+    setHidden(document.getElementById('plots-container'), true);
+    setHidden(document.getElementById('table-wrapper'), true);
 }
