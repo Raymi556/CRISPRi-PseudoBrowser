@@ -1293,6 +1293,25 @@ input[type="range"]::-moz-range-thumb:hover {
 
 .plot-area--auto {
     min-height: 0;
+    height: auto;
+    width: 100%;
+}
+
+.card--heatmap {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.card--heatmap .card-header-row {
+    margin-bottom: 1.25rem;
+}
+
+.card--heatmap .plotly {
+    width: 100%;
+}
+
+.card--heatmap #heatmap-plot {
+    width: 100%;
 }
 
 @media (max-width: 768px) {

@@ -22,17 +22,18 @@
         <div id="compare-error" class="message message-error message--spaced" hidden></div>
     </div>
 
-    <div class="card card--compact card--stacked">
+    <div id="heatmap-card" class="card card--compact card--stacked card--heatmap" hidden>
         <div class="card-header-row">
-            <div class="card-header card-header--flush">Heatmap + Gene Clustering Tree</div>
-            <button id="download-plot" class="btn btn-secondary">Download Plot</button>
+            <div class="card-header card-header--flush">Heatmap</div>
+            <button id="download-plot" class="btn btn-secondary" hidden>Download Plot</button>
         </div>
-        <div id="compare-loading" class="loading loading--compact" hidden>
-            <div class="spinner"></div>
-            <p class="mt-2">Loading heatmap...</p>
-        </div>
-        <div id="heatmap-plot" class="plot-area--compact"></div>
+        <div id="heatmap-plot" class="plot-area--auto"></div>
     </div>
+</div>
+
+<div id="compare-loading" class="loading loading--compact" hidden>
+    <div class="spinner"></div>
+    <p class="mt-2">Loading heatmap...</p>
 </div>
 {% endblock %}
 

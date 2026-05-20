@@ -1,5 +1,23 @@
 let starredGenes = [];
 
+function showHeatmapCard() {
+    const card = document.getElementById('heatmap-card');
+    if (card) {
+        card.hidden = false;
+    }
+}
+
+function hideHeatmapCard() {
+    const card = document.getElementById('heatmap-card');
+    const downloadButton = document.getElementById('download-plot');
+    if (downloadButton) {
+        downloadButton.hidden = true;
+    }
+    if (card) {
+        card.hidden = true;
+    }
+}
+
 function setHidden(element, hidden) {
     if (element) {
         element.hidden = hidden;
@@ -30,23 +48,16 @@ function hideCompareError() {
 
 function showCompareLoading() {
     const loading = document.getElementById('compare-loading');
-    const plot = document.getElementById('heatmap-plot');
     if (loading) {
         setHidden(loading, false);
     }
-    if (plot) {
-        setHidden(plot, true);
-    }
+    hideHeatmapCard();
 }
 
 function hideCompareLoading() {
     const loading = document.getElementById('compare-loading');
-    const plot = document.getElementById('heatmap-plot');
     if (loading) {
         setHidden(loading, true);
-    }
-    if (plot) {
-        setHidden(plot, false);
     }
 }
 
@@ -145,7 +156,7 @@ async function downloadComparePlot() {
     });
 }
 
-function renderHeatmap(data) {
+async function renderHeatmap(data) {
     const rowCount = data.genes.length;
     const yPositions = Array.from({length: rowCount}, (_, i) => i);
     const geneTextMatrix = data.genes.map(gene =>
@@ -239,7 +250,13 @@ function renderHeatmap(data) {
         height: Math.max(640, 32 * rowCount + 250)
     };
 
-    Plotly.newPlot('heatmap-plot', [...dendrogramTraces, heatmapTrace], layout, {responsive: true});
+    showHeatmapCard();
+    await Plotly.newPlot('heatmap-plot', [...dendrogramTraces, heatmapTrace], layout, {responsive: true});
+
+    const downloadPlotBtn = document.getElementById('download-plot');
+    if (downloadPlotBtn) {
+        downloadPlotBtn.hidden = false;
+    }
 }
 
 async function generateHeatmap() {
@@ -262,7 +279,7 @@ async function generateHeatmap() {
             throw new Error(data.error || 'Failed to generate clustered heatmap.');
         }
 
-        renderHeatmap(data);
+        await renderHeatmap(data);
     } finally {
         hideCompareLoading();
     }
@@ -288,6 +305,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             showCompareError(error.message);
         }
     });
+
+    hideHeatmapCard();
 
     try {
         await fetchStarredGenes();
