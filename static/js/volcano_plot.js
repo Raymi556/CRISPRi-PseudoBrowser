@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             min: 0,
             max: 5,
             step: 0.001,
-            defaultValue: 2.0,
+            defaultValue: 0,
             storageKey: 'volcanoLFCThreshold',
             onChange: (value) => {
                 // Debounce redraw
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
             min: 0,
             max: 300,
             step: 0.001,
-            defaultValue: 20.0,
+            defaultValue: 0,
             storageKey: 'volcanoFDRThreshold',
             onChange: (value) => {
                 // Debounce redraw

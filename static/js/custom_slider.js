@@ -11,7 +11,7 @@ class CustomSlider {
             min: options.min || 0,
             max: options.max || 100,
             step: options.step || 1,
-            defaultValue: options.defaultValue || 50,
+            defaultValue: options.defaultValue || 0,
             storageKey: options.storageKey || 'sliderValue',
             onChange: options.onChange || (() => {})
         };

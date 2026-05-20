@@ -56,7 +56,6 @@ def prepare_volcano_data(condition, lfc_threshold=0.0, fdr_threshold=0.05):
     # Get the column names for this condition
     lfc_col = f'{condition}_medLFC'
     fdr_col = f'{condition}_FDR'
-    bh_col = f'{condition}_BH'
     
     # Check if columns exist
     if lfc_col not in df.columns or fdr_col not in df.columns:
