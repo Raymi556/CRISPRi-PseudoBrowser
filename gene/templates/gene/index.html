@@ -45,7 +45,7 @@
                 <input 
                     type="range" 
                     id="window-slider" 
-                    min="{{ min_gene_length }}" 
+                    min="100" 
                     max="{{ max_gene_length }}" 
                     step="1000"
                     value="{{ default_window }}"
@@ -55,9 +55,9 @@
                     id="window-input" 
                     class="form-control" 
                     value="{{ default_window }}"
-                    min="{{ min_gene_length }}"
+                    min="100"
                     max="{{ max_gene_length }}"
-                    step="1000"
+                    step="1"
                 >
                 <small class="form-hint">
                     Range: {{ min_gene_length }} - {{ max_gene_length }} bp

@@ -129,8 +129,8 @@ function buildDendrogramTraces(dendrogram) {
     return segments.map(segment => ({
         type: 'scatter',
         mode: 'lines',
-        x: [segment.x0, segment.x1],
-        y: [segment.y0, segment.y1],
+        x: [segment.y0, segment.y1],
+        y: [segment.x0, segment.x1],
         line: {
             color: '#a0a0a0',
             width: 1.2
@@ -157,18 +157,23 @@ async function downloadComparePlot() {
 }
 
 async function renderHeatmap(data) {
-    const rowCount = data.genes.length;
-    const yPositions = Array.from({length: rowCount}, (_, i) => i);
-    const geneTextMatrix = data.genes.map(gene =>
-        data.condition_labels.map(() => gene)
+    const geneCount = data.genes.length;
+    const conditionCount = data.condition_labels.length;
+    const genePositions = Array.from({length: geneCount}, (_, i) => i);
+    const conditionPositions = Array.from({length: conditionCount}, (_, i) => i);
+    const transposedValues = data.condition_labels.map((_, conditionIndex) =>
+        data.genes.map((_, geneIndex) => data.z_lfc[geneIndex][conditionIndex])
+    );
+    const geneTextMatrix = data.condition_labels.map(() =>
+        data.genes.map(gene => gene)
     );
     const maxAbsLfc = Math.max(1e-9, Number(data.lfc_color_max || 1.0));
 
     const heatmapTrace = {
         type: 'heatmap',
-        z: data.z_lfc,
-        x: data.condition_labels,
-        y: yPositions,
+        z: transposedValues,
+        x: genePositions,
+        y: conditionPositions,
         colorscale: [
             [0.00, '#143a8b'],
             [0.25, '#6f8ed7'],
@@ -182,7 +187,8 @@ async function renderHeatmap(data) {
         hoverongaps: false,
         hovertemplate:
             'Gene: %{text}<br>' +
-            'Condition: %{x}<br>' +
+            'Gene: %{text}<br>' +
+            'Condition: %{y}<br>' +
             'Median LFC: %{z:.3f}<extra></extra>',
         text: geneTextMatrix,
         xaxis: 'x',
@@ -207,47 +213,49 @@ async function renderHeatmap(data) {
         paper_bgcolor: '#1a1a1a',
         plot_bgcolor: '#1a1a1a',
         font: {color: '#e0e0e0'},
-        margin: {l: 20, r: 10, t: 50, b: 210},
+        margin: {l: 90, r: 10, t: 130, b: 80},
         title: {
             text: 'Clustered Heatmap (Starred Genes x All Conditions)',
             font: {color: '#e0e0e0'}
         },
         xaxis: {
-            domain: [0.355, 1.0],
-            tickangle: -40,
+            domain: [0.0, 1.0],
+            tickmode: 'array',
+            tickvals: genePositions,
+            ticktext: data.genes,
+            tickangle: -55,
             automargin: true,
             showgrid: false
         },
         yaxis: {
-            domain: [0, 1],
+            domain: [0, 0.82],
             automargin: true,
             tickmode: 'array',
-            tickvals: yPositions,
-            ticktext: data.genes,
+            tickvals: conditionPositions,
+            ticktext: data.condition_labels,
             showgrid: false,
             zeroline: false,
             autorange: 'reversed',
-            side: 'right',
+            side: 'left',
             ticklabelposition: 'outside'
         },
         xaxis2: {
-            domain: [0.0, 0.35],
-            range: [dendrogramMax, 0],
+            domain: [0.0, 1.0],
+            range: [-0.5, geneCount - 0.5],
             showticklabels: false,
             showgrid: false,
             zeroline: false,
             fixedrange: true
         },
         yaxis2: {
-            domain: [0, 1],
-            range: [-0.5, rowCount - 0.5],
+            domain: [0.84, 1.0],
+            range: [0, dendrogramMax],
             showticklabels: false,
             showgrid: false,
             zeroline: false,
             fixedrange: true,
-            autorange: 'reversed'
         },
-        height: Math.max(640, 32 * rowCount + 250)
+        height: Math.max(640, 32 * conditionCount + 250)
     };
 
     showHeatmapCard();

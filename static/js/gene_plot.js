@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
             min: window.MIN_GENE_LENGTH,
             max: window.MAX_GENE_LENGTH,
             step: 1000,
+            inputStep: 1,
             defaultValue: 5000,
             storageKey: 'geneWindowSize',
             onChange: (value) => {
@@ -567,10 +568,14 @@ function createGuidesTable(guides) {
         ordering: true,
         order: [[4, 'asc']], // Sort by LFC (column 4) ascending by default
         lengthMenu: [10, 25, 50],
-            layout: {
-                topStart: 'buttons',
-                topEnd: 'search'
-            },
+        layout: {
+            topStart: 'buttons',
+            topEnd: 'search'
+        },
+        buttons: [
+            {extend: 'copyHtml5', text: 'Copy'},
+            {extend: 'excelHtml5', text: 'Excel'}
+        ],
         columnDefs: [
             {
                 targets: '_all',

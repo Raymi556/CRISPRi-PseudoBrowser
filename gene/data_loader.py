@@ -43,26 +43,60 @@ def get_data_path():
     """Get the path to the dataFiles directory"""
     return Path(settings.BASE_DIR) / 'dataFiles'
 
+def get_prepared_data_path():
+    """Get the path to the prepared manuscript-subset browser data."""
+    return Path(settings.BASE_DIR) / 'dataFiles2' / 'prepared_browser'
+
 def load_pao1_annotation():
-    """Load PAO1 genome annotation"""
+    """Load annotation embedded in the prepared browser data."""
     if 'pao1' not in _data_cache:
-        data_path = get_data_path() / 'PAO1_curated.tsv'
-        _data_cache['pao1'] = pd.read_csv(data_path, sep='\t')
+        data_path = get_prepared_data_path() / 'condition_gene_data.tsv'
+        columns = [
+            'PAO1_ID',
+            'PA14_ID',
+            'gene_name',
+            'product_name',
+            'category',
+            'feature_type',
+            'start',
+            'end',
+            'strand',
+        ]
+        annotation = pd.read_csv(data_path, sep='\t', usecols=columns)
+        _data_cache['pao1'] = annotation.drop_duplicates('PAO1_ID')
     return _data_cache['pao1']
 
 def load_fl_guides():
-    """Load full-length guides library data"""
+    """Load guide metadata embedded in the prepared browser data."""
     if 'fl_guides' not in _data_cache:
-        data_path = get_data_path() / 'Lib1_FLguides.tsv'
-        _data_cache['fl_guides'] = pd.read_csv(data_path, sep='\t')
+        data_path = get_prepared_data_path() / 'guide_data.tsv'
+        columns = [
+            'spacer',
+            'pam',
+            'downstream',
+            'off_target_n',
+            'mean_abund_50M',
+            'offset',
+            'gc',
+            'predicted_efficacy_score',
+        ]
+        guides = pd.read_csv(data_path, sep='\t', usecols=columns)
+        _data_cache['fl_guides'] = guides.drop_duplicates('spacer')
     return _data_cache['fl_guides']
 
 def load_melted_results():
     """Load melted results (guide-level data)"""
     if 'melted_results' not in _data_cache:
-        data_path = get_data_path() / 'melted_results_trim.tsv'
+        data_path = get_prepared_data_path() / 'guide_data.tsv'
         _data_cache['melted_results'] = pd.read_csv(data_path, sep='\t')
     return _data_cache['melted_results']
+
+def load_condition_gene_data():
+    """Load prepared gene-level condition data."""
+    if 'condition_gene_data' not in _data_cache:
+        data_path = get_prepared_data_path() / 'condition_gene_data.tsv'
+        _data_cache['condition_gene_data'] = pd.read_csv(data_path, sep='\t')
+    return _data_cache['condition_gene_data']
 
 
 def load_pao1_cog():
@@ -249,36 +283,20 @@ def get_gene_length_limits():
     return _data_cache['gene_length_limits']
 
 def load_condition_hits(condition):
-    """Load volcano plot data for a specific condition"""
+    """Load prepared gene-level data for a specific condition."""
     cache_key = f'condition_hits_{condition}'
     if cache_key not in _data_cache:
-        # Map condition names to file names
-        # Condition names like "CAZ_1_T1 - None_E2_T1" map to "P_significant_hits_CAZ_1.tsv"
-        condition_base = condition.split('_T')[0].split(' -')[0].strip()
-        
-        data_path = get_data_path() / f'P_significant_hits_{condition_base}.tsv'
-        
-        if not data_path.exists():
-            return None
-        
-        _data_cache[cache_key] = pd.read_csv(data_path, sep='\t')
+        data = load_condition_gene_data()
+        _data_cache[cache_key] = data[data['condition'] == condition].copy()
     
     return _data_cache[cache_key]
 
 def get_volcano_conditions():
-    """Get list of conditions available for volcano plot (from P_significant_hits files)"""
+    """Get prepared display conditions available for volcano plots."""
     if 'volcano_conditions' not in _data_cache:
-        data_path = get_data_path()
-        conditions = []
-        
-        # Look for all P_significant_hits_*.tsv files
-        for file in data_path.glob('P_significant_hits_*.tsv'):
-            if '_curated' not in file.name:  # Skip curated versions
-                # Extract condition name from filename
-                condition = file.name.replace('P_significant_hits_', '').replace('.tsv', '')
-                conditions.append(condition)
-        
-        _data_cache['volcano_conditions'] = sorted(conditions)
+        _data_cache['volcano_conditions'] = sorted(
+            load_condition_gene_data()['condition'].dropna().unique().tolist()
+        )
     
     return _data_cache['volcano_conditions']
 

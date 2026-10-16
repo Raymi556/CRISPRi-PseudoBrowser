@@ -1,29 +1,59 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Guides - CRISPRi-seq{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>Guides Browser</h1>
-    <p>Explore individual guide performance across conditions</p>
+    <p>Find and compare perfect guides for single-guide analysis</p>
 </div>
 
-<div class="card-header card-header--large">Coming Soon!</div>
-{% comment %} <div class="card card--compact">
-    <div class="card-header card-header--large">Coming Soon!</div>
-    <p class="text-muted">
-        This section will allow you to:
+<div class="card card--compact">
+    <div class="selector-grid">
+        <div class="form-group form-group--relative">
+            <label for="guide-gene">Gene or PAO1 ID</label>
+            <input id="guide-gene" class="form-control" type="text"
+                   placeholder="e.g. mexX or PA2019" autocomplete="off">
+        </div>
+        <div class="form-group form-group--button">
+            <button id="guide-search" class="btn btn-primary" type="button">
+                Find Guides
+            </button>
+        </div>
+    </div>
+    <p class="form-hint">
+        Results rank perfect guides by the available Kawalek efficacy score,
+        then experimental guide effect.
     </p>
-    <ul class="text-muted ms-4 mt-2">
-        <li>Search for specific guide sequences</li>
-        <li>View guide performance across all conditions</li>
-        <li>Filter by targeting efficiency and off-target counts</li>
-        <li>Compare guides targeting the same gene</li>
-        <li>Export guide statistics and metadata</li>
-    </ul>
-    
-    <p class="text-muted mt-3">
-        For now, please use the <a href="{% url 'gene:index' %}" class="link-accent">Gene Browser</a> to explore guide-level data in genomic context.
-    </p> {% endcomment %}
 </div>
+
+<div id="guides-error" class="error-message" hidden></div>
+<div id="guides-results" class="card card--section guides-results-card" hidden>
+    <div class="table-container">
+        <table id="guide-ranking-table" class="table table--full-width display">
+            <thead>
+                <tr>
+                    <th>Spacer</th>
+                    <th>Kawalek score</th>
+                    <th>Off-targets</th>
+                    <th>Median LFC</th>
+                    <th>Max |LFC|</th>
+                    <th>Median abundance</th>
+                    <th>Conditions</th>
+                    <th>Batches</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.GUIDES_LIST_URL = "{% url 'gene:gene_list' %}";
+</script>
+<script src="{% static 'js/gene_autocomplete.js' %}"></script>
+<script src="{% static 'js/guides_browser.js' %}"></script>
 {% endblock %}

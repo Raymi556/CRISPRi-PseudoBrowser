@@ -12,8 +12,8 @@ def index(request):
     context = {
         'conditions': conditions,
         'default_condition': conditions[0] if conditions else '',
-        'default_lfc_threshold': 0,
-        'default_fdr_threshold': 0,
+        'default_lfc_threshold': 1,
+        'default_fdr_threshold': 1.30103,
     }
     
     return render(request, 'condition/index.html', context)

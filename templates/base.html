@@ -29,6 +29,9 @@
                     <a href="{% url 'guides:index' %}" class="nav-link {% if request.resolver_match.app_name == 'guides' %}active{% endif %}">Guides</a>
                 </li>
                 <li class="nav-item">
+                    <a href="{% url 'mismatch:index' %}" class="nav-link {% if request.resolver_match.app_name == 'mismatch' %}active{% endif %}">Mismatch Data</a>
+                </li>
+                <li class="nav-item">
                     <a href="{% url 'condition:index' %}" class="nav-link {% if request.resolver_match.app_name == 'condition' %}active{% endif %}">Condition</a>
                 </li>
                 <li class="nav-item">

@@ -7,7 +7,7 @@
 **Key Technologies:**
 - Backend: Django 5.x with Python 3.11+
 - Frontend: Plotly.js 2.27.0 for interactive visualizations, DataTables 2.3.x for data tables
-- Data Format: Tab-separated values (TSV) files in `dataFiles/`
+- Data Format: Prepared tab-separated values (TSV) files in `dataFiles2/prepared_browser/`
 - Styling: Custom CSS with CSS variables for dark theme
 
 ---
@@ -135,14 +135,18 @@ CRISPRi-PseudoBrowser/
 │   │   └── volcano_plot.js             # Volcano plot + threshold controls
 │   └── images/
 │
-├── dataFiles/                          # Data directory (TSV files)
+├── dataFiles2/prepared_browser/        # Runtime manuscript-subset TSV files
+│   ├── comparison_manifest.tsv
+│   ├── condition_gene_data.tsv
+│   ├── guide_data.tsv
+│   └── mismatch_data.tsv
+├── dataFiles/                          # Static pathway annotation
 │   ├── PAO1_curated.tsv                # Gene annotation (PAO1 reference)
 │   ├── Lib1_FLguides.tsv               # Guide sequences library
-│   ├── melted_results_trim.tsv         # Guide-level experimental data
-│   ├── P_significant_hits_*.tsv        # Condition-specific volcano plots
+│   ├── melted_results_trim.tsv         # Legacy/preparation input only
 │   ├── PAO1_gene_ontology.tsv          # Gene ontology data
 │   ├── pathways.tsv                    # Metabolic pathway data
-│   └── thresholds_by_condition_with_BH.tsv  # Statistical thresholds
+│   └── thresholds_by_condition_with_BH.tsv  # Legacy/preparation input only
 │
 ├── environment.yml                     # Conda environment definition
 ├── requirements.txt                    # Python dependencies

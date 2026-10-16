@@ -27,4 +27,5 @@ urlpatterns = [
     path('pathway/', include('pathway.urls')),
     path('compare/', include('compare.urls')),
     path('downloads/', include('downloads.urls')),
+    path('mismatch/', include('mismatch.urls')),
 ]

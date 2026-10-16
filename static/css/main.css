@@ -836,6 +836,10 @@ input[type="range"]::-moz-range-thumb:hover {
     margin-bottom: 2rem;
 }
 
+.guides-results-card {
+    min-height: 0;
+}
+
 .card--compact {
     min-height: 0;
 }
@@ -869,6 +873,29 @@ input[type="range"]::-moz-range-thumb:hover {
 
 .card-header--flush {
     margin: 0;
+}
+
+.condition-selector-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.condition-selector-form .form-control {
+    width: auto;
+    flex: 1;
+}
+
+.mismatch-selector-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.5fr) auto;
+    align-items: end;
+    gap: 1rem;
+}
+
+.mismatch-selector-form .form-control {
+    width: 100%;
 }
 
 .card-header--large {
@@ -1323,6 +1350,10 @@ input[type="range"]::-moz-range-thumb:hover {
 
     .site-footer__column--right {
         text-align: left;
+    }
+
+    .mismatch-selector-form {
+        grid-template-columns: 1fr;
     }
 
     .card-header-row {

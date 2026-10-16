@@ -5,7 +5,10 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, leaves_list, to_tree
 from scipy.spatial.distance import pdist
 
-from gene.data_loader import get_available_conditions, load_melted_results
+from gene.data_loader import (
+    get_available_conditions,
+    load_condition_gene_data,
+)
 
 
 def _resolve_lfc_column(df):
@@ -61,7 +64,7 @@ def prepare_compare_heatmap_data(starred_genes):
     if not starred_genes:
         raise ValueError("No starred genes found. Add genes in Pathway first.")
 
-    melted = load_melted_results()
+    melted = load_condition_gene_data()
     lfc_column = _resolve_lfc_column(melted)
 
     condition_list = get_available_conditions()

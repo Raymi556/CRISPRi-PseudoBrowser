@@ -9,100 +9,31 @@
     <p>Explore volcano plots for experimental conditions and identify significant hits</p>
 </div>
 
-<div class="content-grid content-grid--two">
-    <!-- Control panel: same shell as the gene browser, with thresholds controlled by shared sliders. -->
-    <div class="card card--form">
-        <div class="card-header">Volcano Plot Controls</div>
-        
-        <form id="volcano-form">
-            <div class="form-group">
-                <label for="condition-select" class="form-label">
-                    Condition
-                </label>
-                <select 
-                    id="condition-select" 
-                    class="form-control"
-                >
-                    {% for condition in conditions %}
-                    <option value="{{ condition }}" 
-                        {% if condition == default_condition %}selected{% endif %}>
-                        {{ condition }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="lfc-threshold-input" class="form-label">Log2 Fold Change Threshold</label>
-                <input 
-                    type="range" 
-                    id="lfc-threshold-slider" 
-                    min="0" 
-                    max="5" 
-                    step="0.001"
-                    value="{{ default_lfc_threshold }}"
-                >
-                <input 
-                    type="number" 
-                    id="lfc-threshold-input" 
-                    class="form-control" 
-                    value="{{ default_lfc_threshold }}"
-                    min="0"
-                    max="5"
-                    step="0.001"
-                >
-                <small class="form-hint">
-                    Genes with |LFC| ≥ threshold are highlighted
-                </small>
-            </div>
-
-            <div class="form-group">
-                <label for="fdr-threshold-input" class="form-label">-Log10 FDR Threshold</label>
-                <input 
-                    type="range" 
-                    id="fdr-threshold-slider" 
-                    min="0" 
-                    max="5" 
-                    step="0.001"
-                    value="{{ default_fdr_threshold }}"
-                >
-                <input 
-                    type="number" 
-                    id="fdr-threshold-input" 
-                    class="form-control" 
-                    value="{{ default_fdr_threshold }}"
-                    min="0"
-                    max="5"
-                    step="0.001"
-                >
-                <small class="form-hint">
-                    The horizontal threshold bar uses the plotted -log10(FDR) scale
-                </small>
-            </div>
-
-            <button type="submit" class="btn btn-primary full-width">
+<div class="card card--stacked" id="volcano-info-card">
+    <div class="card-header-row">
+        <form id="volcano-form" class="condition-selector-form">
+            <label for="condition-select" class="visually-hidden">Condition</label>
+            <select id="condition-select" class="form-control">
+                {% for condition in conditions %}
+                <option value="{{ condition }}"
+                    {% if condition == default_condition %}selected{% endif %}>
+                    {{ condition }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">
                 Generate Plot
             </button>
         </form>
-
-        <div id="error-message" class="message message-error message--spaced" hidden>
-        </div>
+        <button id="download-plot" class="btn btn-secondary">Download Plot</button>
     </div>
-
+    <div id="error-message" class="message message-error message--spaced" hidden></div>
     <div id="loading" class="loading" hidden>
         <div class="spinner"></div>
         <p class="mt-2">Loading data...</p>
     </div>
-
-    <!-- Plot Card -->
-    <div class="card card--stacked" id="volcano-info-card" hidden>
-        <div class="card-header-row">
-            <div class="card-header card-header--flush">Volcano Plot</div>
-            <button id="download-plot" class="btn btn-secondary">Download Plot</button>
-        </div>
-        <div class="plot-container plot-area--auto" id="plots-container" hidden>
-            <div id="volcano-plot" class="plot-area--tall"></div>
-        </div>
+    <div class="plot-container plot-area--auto" id="plots-container" hidden>
+        <div id="volcano-plot" class="plot-area--tall"></div>
     </div>
 </div>
 

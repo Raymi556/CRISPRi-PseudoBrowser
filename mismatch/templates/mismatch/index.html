@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mismatch Data - CRISPRi-seq{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Mismatch Data</h1>
+    <p>Explore individual genes across graded mismatch-guide series</p>
+</div>
+
+<div class="card card--compact">
+    <form id="mismatch-form" class="mismatch-selector-form">
+        <div class="form-group--relative">
+            <label for="mismatch-gene" class="form-label">Gene or PAO1 ID</label>
+            <input id="mismatch-gene" class="form-control" value="dnaN" required autocomplete="off">
+        </div>
+        <div>
+            <label for="mismatch-condition" class="form-label">Condition</label>
+            <select id="mismatch-condition" class="form-control">
+                {% for condition in conditions %}
+                <option value="{{ condition }}" {% if condition == default_condition %}selected{% endif %}>
+                    {{ condition }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Generate Plot</button>
+    </form>
+    <div id="mismatch-error" class="message message-error" hidden></div>
+    <div id="mismatch-loading" class="loading" hidden>
+        <div class="spinner"></div>
+        <p class="mt-2">Loading mismatch data...</p>
+    </div>
+</div>
+
+<div id="mismatch-results" hidden>
+    <div class="card card--stacked">
+        <div class="card-header-row">
+            <div id="mismatch-title" class="card-header card-header--flush"></div>
+            <button id="mismatch-download" class="btn btn-secondary">Download Plot</button>
+        </div>
+        <div id="mismatch-plot" class="plot-area--tall"></div>
+    </div>
+    <div class="table-container">
+        <div id="mismatch-table"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.MISMATCH_DATA_URL = "{% url 'mismatch:get_data' %}";
+    window.GENE_LIST_URL = "{% url 'gene:gene_list' %}";
+    window.CSRF_TOKEN = '{{ csrf_token }}';
+</script>
+<script src="{% static 'js/gene_autocomplete.js' %}"></script>
+<script src="{% static 'js/mismatch_plot.js' %}?v=20261015"></script>
+{% endblock %}

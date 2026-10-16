@@ -1,12 +1,10 @@
 /**
  * Volcano Plot - CRISPRi-seq Condition Browser
- * Interactive Plotly visualization with adjustable thresholds
+ * Interactive Plotly visualization with fixed significance thresholds
  */
 
 // Global state
 let currentData = null;
-let lfcThresholdSlider = null;
-let fdrThresholdSlider = null;
 
 function setHidden(element, hidden) {
     if (element) {
@@ -24,61 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const form = document.getElementById('volcano-form');
     form.addEventListener('submit', handleFormSubmit);
-    
-    // Initialize LFC threshold slider
-    const lfcSlider = document.getElementById('lfc-threshold-slider');
-    const lfcInput = document.getElementById('lfc-threshold-input');
-    if (lfcSlider && lfcInput) {
-        lfcThresholdSlider = new CustomSlider(lfcSlider, lfcInput, {
-            min: 0,
-            max: 5,
-            step: 0.001,
-            defaultValue: 0,
-            storageKey: 'volcanoLFCThreshold',
-            onChange: (value) => {
-                // Debounce redraw
-                if (currentData) {
-                    redrawVolcanoPlot();
-                }
-            }
-        });
-        
-        // Add real-time input listener for smooth dragging
-        lfcSlider.addEventListener('input', () => {
-            lfcInput.value = parseFloat(lfcSlider.value).toFixed(3);
-            if (currentData) {
-                redrawVolcanoPlot();
-            }
-        });
-    }
-    
-    // Initialize FDR threshold slider
-    const fdrSlider = document.getElementById('fdr-threshold-slider');
-    const fdrInput = document.getElementById('fdr-threshold-input');
-    if (fdrSlider && fdrInput) {
-        fdrThresholdSlider = new CustomSlider(fdrSlider, fdrInput, {
-            min: 0,
-            max: 300,
-            step: 0.001,
-            defaultValue: 0,
-            storageKey: 'volcanoFDRThreshold',
-            onChange: (value) => {
-                // Debounce redraw
-                if (currentData) {
-                    redrawVolcanoPlot();
-                }
-            }
-        });
-        
-        // Add real-time input listener for smooth dragging
-        fdrSlider.addEventListener('input', () => {
-            fdrInput.value = parseFloat(fdrSlider.value).toFixed(3);
-            if (currentData) {
-                redrawVolcanoPlot();
-            }
-        });
-    }
-    
+
     // Download plot button
     const downloadBtn = document.getElementById('download-plot');
     if (downloadBtn) {
@@ -87,6 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
             Plotly.downloadImage(plotDiv, { format: 'png', width: 1000, height: 800, filename: 'volcano_plot' });
         });
     }
+
+    loadVolcanoData();
     
     console.log('Condition browser initialization complete');
 });
@@ -104,10 +50,6 @@ function handleFormSubmit(event) {
  */
 async function loadVolcanoData() {
     const condition = document.getElementById('condition-select').value;
-    const lfcThreshold = parseFloat(document.getElementById('lfc-threshold-input').value);
-    const fdrLogThreshold = parseFloat(document.getElementById('fdr-threshold-input').value);
-    const fdrThreshold = Math.pow(10, -fdrLogThreshold);
-    
     if (!condition) {
         showError('Please select a condition');
         return;
@@ -126,9 +68,7 @@ async function loadVolcanoData() {
                 'X-CSRFToken': window.CSRF_TOKEN
             },
             body: JSON.stringify({
-                condition: condition,
-                lfc_threshold: lfcThreshold,
-                fdr_threshold: fdrThreshold
+                condition: condition
             })
         });
         
@@ -141,27 +81,10 @@ async function loadVolcanoData() {
         
         currentData = data;
 
-        const fdrSlider = document.getElementById('fdr-threshold-slider');
-        const fdrInput = document.getElementById('fdr-threshold-input');
-        const maxLog10Fdr = Number.isFinite(data.max_log10_fdr) ? data.max_log10_fdr : 5;
-        if (fdrSlider) {
-            fdrSlider.max = maxLog10Fdr.toFixed(3);
-        }
-        if (fdrInput) {
-            fdrInput.max = maxLog10Fdr.toFixed(3);
-        }
-        if (fdrThresholdSlider && typeof fdrThresholdSlider.updateLimits === 'function') {
-            fdrThresholdSlider.updateLimits(0, maxLog10Fdr);
-        }
-        if (parseFloat(fdrInput.value) > maxLog10Fdr) {
-            fdrInput.value = maxLog10Fdr.toFixed(3);
-            fdrSlider.value = maxLog10Fdr.toFixed(3);
-        }
-        
         showPlots();
         
         // Create volcano plot after the container is visible so Plotly can measure it correctly
-        createVolcanoPlot(data, lfcThreshold, fdrLogThreshold);
+        createVolcanoPlot(data);
         createGenesTable(data.records);
         
         const plotDiv = document.getElementById('volcano-plot');
@@ -182,19 +105,10 @@ async function loadVolcanoData() {
 /**
  * Redraw volcano plot with updated thresholds
  */
-function redrawVolcanoPlot() {
-    if (!currentData || !currentData.records) return;
-    
-    const lfcThreshold = parseFloat(document.getElementById('lfc-threshold-input').value);
-    const fdrThreshold = parseFloat(document.getElementById('fdr-threshold-input').value);
-    
-    createVolcanoPlot(currentData, lfcThreshold, fdrThreshold);
-}
-
 /**
- * Create Plotly volcano plot with interactive threshold lines
+ * Create Plotly volcano plot with fixed significance thresholds.
  */
-function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
+function createVolcanoPlot(data) {
     const plotDiv = document.getElementById('volcano-plot');
     
     if (!plotDiv) {
@@ -212,10 +126,8 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
     const significantGenes = [];
     const nonSignificantGenes = [];
     
-    const actualFdrThreshold = Math.pow(10, -fdrThreshold);
-
     data.records.forEach(record => {
-        const isSig = (Math.abs(record.lfc) >= Math.abs(lfcThreshold)) && (record.fdr <= actualFdrThreshold);
+        const isSig = record.is_significant;
         if (isSig) {
             significantGenes.push(record);
         } else {
@@ -243,7 +155,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
                 }
             },
             text: nonSignificantGenes.map(r => 
-                `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>FDR: ${r.fdr.toExponential(2)}`
+                `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>Stouffer p: ${r.fdr.toExponential(2)}`
             ),
             hovertemplate: '%{text}<extra></extra>',
             showlegend: true
@@ -268,7 +180,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
                 }
             },
             text: significantGenes.map(r => 
-                `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>FDR: ${r.fdr.toExponential(2)}`
+                `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>Stouffer p: ${r.fdr.toExponential(2)}`
             ),
             hovertemplate: '%{text}<extra></extra>',
             showlegend: true
@@ -279,13 +191,13 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
     // Create shapes for threshold lines
     const shapes = [];
     
-    // Vertical lines for LFC thresholds
-    if (lfcThreshold > 0) {
+    // Vertical lines for the log2FC threshold
+    {
         shapes.push({
             type: 'line',
-            x0: lfcThreshold,
+            x0: 1,
             y0: 0,
-            x1: lfcThreshold,
+            x1: 1,
             y1: 1,
             xref: 'x',
             yref: 'paper',
@@ -298,9 +210,9 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
         
         shapes.push({
             type: 'line',
-            x0: -lfcThreshold,
+            x0: -1,
             y0: 0,
-            x1: -lfcThreshold,
+            x1: -1,
             y1: 1,
             xref: 'x',
             yref: 'paper',
@@ -312,9 +224,9 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
         });
     }
     
-    // Horizontal line for FDR threshold
-    if (fdrThreshold > 0) {
-        const fdrLine = fdrThreshold;
+    // Horizontal line for the Stouffer p-value threshold
+    {
+        const fdrLine = -Math.log10(0.05);
         shapes.push({
             type: 'line',
             x0: 0,
@@ -332,7 +244,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
     }
     
     // Create layout
-    const thresholdTitle = `|LFC| ≥ ${Math.abs(lfcThreshold).toFixed(3)}, -log10(FDR) ≥ ${fdrThreshold.toFixed(3)}`;
+    const thresholdTitle = '|log2FC| > 1, Stouffer p < 0.05';
 
     const layout = {
         title: {
@@ -348,7 +260,7 @@ function createVolcanoPlot(data, lfcThreshold, fdrThreshold) {
             zerolinewidth: 1.5
         },
         yaxis: {
-            title: '-Log<sub>10</sub> FDR',
+            title: '-Log<sub>10</sub> Stouffer p-value',
             color: '#a0a0a0',
             gridcolor: '#2a2a2a',
             zeroline: true,
@@ -392,7 +304,13 @@ function createGenesTable(records) {
         return;
     }
 
-    const sortedRecords = [...records].sort((left, right) => {
+    const significantRecords = records.filter(record => record.is_significant);
+    if (significantRecords.length === 0) {
+        tableContainer.innerHTML = '<p class="empty-state">No significant genes available</p>';
+        return;
+    }
+
+    const sortedRecords = [...significantRecords].sort((left, right) => {
         const leftFdr = Number(left.fdr);
         const rightFdr = Number(right.fdr);
         return leftFdr - rightFdr;
@@ -406,7 +324,7 @@ function createGenesTable(records) {
                     <th>Gene Name</th>
                     <th>PAO1 ID</th>
                     <th>Log2 FC</th>
-                    <th>FDR</th>
+                    <th>Stouffer p-value</th>
                     <th>Product</th>
                 </tr>
             </thead>
@@ -439,6 +357,14 @@ function createGenesTable(records) {
             ordering: true,
             order: [[3, 'asc']],
             pageLength: 10,
+            layout: {
+                topStart: 'buttons',
+                topEnd: 'search'
+            },
+            buttons: [
+                {extend: 'copyHtml5', text: 'Copy'},
+                {extend: 'excelHtml5', text: 'Excel'}
+            ],
             language: {
                 search: 'Search genes:',
                 paginate: {

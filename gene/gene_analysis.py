@@ -108,12 +108,27 @@ def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
     )
     
     # Join with guide library metadata
-    guides_df = guides_df.merge(
-        fl_guides[['spacer', 'pam', 'downstream', 'off_target_n', 
-                   'mean_abund_50M', 'offset', 'gc']],
-        on='spacer',
-        how='left'
-    )
+    metadata_columns = [
+        'spacer',
+        'pam',
+        'downstream',
+        'off_target_n',
+        'mean_abund_50M',
+        'offset',
+        'gc',
+    ]
+    missing_metadata = [
+        column for column in metadata_columns if column not in guides_df.columns
+    ]
+    if missing_metadata:
+        guides_df = guides_df.merge(
+            fl_guides[metadata_columns].drop(columns=[
+                column for column in metadata_columns
+                if column not in missing_metadata and column != 'spacer'
+            ]),
+            on='spacer',
+            how='left'
+        )
     
     # Remove duplicates
     guides_df = guides_df.drop_duplicates()

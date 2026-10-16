@@ -45,3 +45,32 @@ mamba run -n pseudoBrowser python manage.py runserver
 ```
 
 The browser will be available at: `http://127.0.0.1:8000/`
+
+## Manuscript-subset browser data
+
+The browser reads the prepared TSV files in
+`dataFiles2/prepared_browser/`. These files preserve the B1-B4 batch labels,
+aminoglycoside/FBS treatment comparisons, matched controls, and mismatch-guide
+records:
+
+- `comparison_manifest.tsv`
+- `condition_gene_data.tsv`
+- `guide_data.tsv`
+- `mismatch_data.tsv`
+
+Regenerate the files with:
+
+```bash
+mamba run -n pseudoBrowser python scripts/prepare_browser_data.py
+```
+
+Condition significance is fixed at `abs(log2FC) > 1` and Stouffer
+`p < 0.05`. The Condition page displays the resulting volcano data, while
+Mismatch Data at `/mismatch/` provides the graded mismatch-guide analysis.
+Guides at `/guides/` ranks perfect guides for a gene using the available
+Kawalek efficacy score and experimental guide metrics. The response shape
+leaves room for additional model-score columns when those files are added.
+
+For manual validation, open `/gene/`, `/condition/`, `/pathway/`, `/guides/`,
+and `/mismatch/`. Check the plots and verify that each data table supports
+searching, sorting, paging, Copy, and Excel export without a CSV action.

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'pathway',
     'compare',
     'downloads',
+    'mismatch',
 ]
 
 MIDDLEWARE = [

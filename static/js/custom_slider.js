@@ -11,6 +11,7 @@ class CustomSlider {
             min: options.min || 0,
             max: options.max || 100,
             step: options.step || 1,
+            inputStep: options.inputStep || options.step || 1,
             defaultValue: options.defaultValue || 0,
             storageKey: options.storageKey || 'sliderValue',
             onChange: options.onChange || (() => {})
@@ -48,19 +49,16 @@ class CustomSlider {
         
         // Input change updates slider
         this.input.addEventListener('input', () => {
-            let value = parseFloat(this.input.value);
-            
-            // Validate and clamp value
+            const value = parseFloat(this.input.value);
+
             if (isNaN(value)) return;
-            value = Math.max(this.options.min, Math.min(this.options.max, value));
-            
-            // Round to nearest step
-            value = Math.round(value / this.options.step) * this.options.step;
-            
-            this.slider.value = value;
-            this.input.value = value;
-            this.saveValue(value);
-            this.options.onChange(value);
+            const boundedValue = Math.max(
+                this.options.min,
+                Math.min(this.options.max, value)
+            );
+            this.slider.value = this.sliderValue(boundedValue);
+            this.saveValue(boundedValue);
+            this.options.onChange(boundedValue);
         });
         
         // Handle manual input validation on blur
@@ -71,7 +69,7 @@ class CustomSlider {
                 value = this.loadValue() || this.options.defaultValue;
             } else {
                 value = Math.max(this.options.min, Math.min(this.options.max, value));
-                value = Math.round(value / this.options.step) * this.options.step;
+                value = Math.round(value / this.options.inputStep) * this.options.inputStep;
             }
             
             this.setValue(value);
@@ -79,9 +77,17 @@ class CustomSlider {
     }
     
     setValue(value) {
-        this.slider.value = value;
+        value = Math.max(this.options.min, Math.min(this.options.max, value));
+        value = Math.round(value / this.options.inputStep) * this.options.inputStep;
+        this.slider.value = this.sliderValue(value);
         this.input.value = value;
         this.saveValue(value);
+    }
+
+    sliderValue(value) {
+        const steppedValue = this.options.min
+            + Math.round((value - this.options.min) / this.options.step) * this.options.step;
+        return Math.max(this.options.min, Math.min(this.options.max, steppedValue));
     }
     
     getValue() {

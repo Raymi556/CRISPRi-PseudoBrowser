@@ -33,7 +33,7 @@ def index(request):
         'default_window': default_window,
         'default_conditions': default_conditions,
         'auto_submit': auto_submit,
-        'min_gene_length': gene_limits['min'],
+        'min_gene_length': max(100, gene_limits['min']),
         'max_gene_length': gene_limits['max']
     }
     

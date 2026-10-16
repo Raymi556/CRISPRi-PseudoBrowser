@@ -212,6 +212,10 @@ function renderDatasetTable(records) {
                 topStart: 'buttons',
                 topEnd: 'search'
             },
+            buttons: [
+                {extend: 'copyHtml5', text: 'Copy'},
+                {extend: 'excelHtml5', text: 'Excel'}
+            ],
             language: {
                 search: 'Search records:',
                 paginate: {
