@@ -734,6 +734,54 @@ input[type="range"]::-moz-range-thumb:hover {
     margin-bottom: 0;
 }
 
+.dt-length select {
+    background: var(--input-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    padding: 0.35rem 1.8rem 0.35rem 0.55rem;
+    color-scheme: dark;
+}
+
+.dt-length select option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.dt-length select:focus {
+    border-color: var(--accent-red);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.table-filter-message {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.7rem 1rem;
+    background: rgba(220, 38, 38, 0.12);
+    border: 1px solid var(--accent-red-dark);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.table-filter-clear {
+    flex: 0 0 auto;
+    padding: 0 0.35rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.table-filter-clear:hover {
+    color: var(--accent-red-hover);
+}
+
 /* Table styling with DataTables */
 .dataTables_wrapper table {
     width: 100%;

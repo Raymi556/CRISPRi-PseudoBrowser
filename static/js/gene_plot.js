@@ -309,7 +309,22 @@ function createCombinedGenePlot(genes, guides, region) {
         displaylogo: false
     };
 
-    Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces], layout, config);
+    Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces], layout, config).then(() => {
+        plotDiv.on('plotly_click', event => {
+            const point = event.points[0];
+            const guide = point?.data?.customdata?.[point.pointNumber];
+            if (!guide) {
+                return;
+            }
+            filterTableFromPlot({
+                tableSelector: '#guidesDataTable',
+                columnIndex: 3,
+                value: guide.spacer,
+                label: 'guide spacer',
+                messageId: 'guides-table-filter'
+            });
+        });
+    });
 }
 
 function buildGeneMedianTraces(guides, genes, geneMedianLfc) {
@@ -469,6 +484,7 @@ function buildLFCTraces(guides) {
                 color: getConditionColor(idx),
                 opacity: 0.5
             },
+            customdata: conditionGuides,
             text: conditionGuides.map(g =>
                 `Gene: ${g.gene_name}<br>` +
                 `Guide: ${g.spacer}<br>` +
@@ -485,6 +501,7 @@ function buildLFCTraces(guides) {
  */
 function createGuidesTable(guides) {
     const container = document.getElementById('guides-table-container');
+    document.getElementById('guides-table-filter').hidden = true;
     
     if (!guides || guides.length === 0) {
         container.innerHTML = '<p class="empty-state">No guide data available</p>';
@@ -570,12 +587,21 @@ function createGuidesTable(guides) {
         lengthMenu: [10, 25, 50],
         layout: {
             topStart: 'buttons',
-            topEnd: 'search'
+            topEnd: 'search',
+            bottomStart: 'pageLength',
+            bottomEnd: 'info'
         },
         buttons: [
             {extend: 'copyHtml5', text: 'Copy'},
             {extend: 'excelHtml5', text: 'Excel'}
         ],
+        language: {
+            info: 'Total entries: _MAX_ (showing _START_ to _END_ of _TOTAL_ matching)',
+            paginate: {
+                previous: '← Previous',
+                next: 'Next →'
+            }
+        },
         columnDefs: [
             {
                 targets: '_all',

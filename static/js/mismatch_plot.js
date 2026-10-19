@@ -153,6 +153,7 @@ async function loadMismatchData(event) {
 }
 
 function renderMismatchData(data) {
+    document.getElementById('mismatch-table-filter').hidden = true;
     document.getElementById('mismatch-results').hidden = false;
     document.getElementById('mismatch-title').textContent =
         `${data.gene} (${data.PAO1_ID}) - ${data.condition}`;
@@ -162,6 +163,7 @@ function renderMismatchData(data) {
             x: mismatch.map(record => record.y_pred),
             y: mismatch.map(record => record['LFC.adj']),
             text: mismatch.map(record => record.original),
+            customdata: mismatch,
             mode: 'markers',
             name: 'Mismatch guides',
             marker: {color: '#6f8ed7', size: 8}
@@ -213,7 +215,23 @@ function renderMismatchData(data) {
         shapes,
         height: 700,
         hovermode: 'closest'
-    }, {responsive: true, displaylogo: false});
+    }, {responsive: true, displaylogo: false}).then(() => {
+        const plot = document.getElementById('mismatch-plot');
+        plot.on('plotly_click', event => {
+            const point = event.points[0];
+            const record = point?.data?.customdata?.[point.pointNumber];
+            if (!record) {
+                return;
+            }
+            filterTableFromPlot({
+                tableSelector: '#mismatch-data-table',
+                columnIndex: 4,
+                value: record.original,
+                label: 'parent guide',
+                messageId: 'mismatch-table-filter'
+            });
+        });
+    });
 
     const summary = data.summary;
     const rows = data.records.map(record => `
@@ -230,10 +248,18 @@ function renderMismatchData(data) {
         <p class="text-muted">Severity: ${summary.severity ?? 'NA'} | EC50: ${summary.ec50 ?? 'NA'} | Sensitivity: ${summary.sensitivity ?? 'NA'} | Protection: ${summary.protection ?? 'NA'}</p>
         <table id="mismatch-data-table" class="table table--full-width display">
             <thead><tr><th>Type</th><th>Predicted activity</th><th>Adjusted log2FC</th><th>Guide</th><th>Parent guide</th><th>Batch</th></tr></thead>
+            <tfoot><tr>
+                <td><input type="text" class="column-search" placeholder="Type" data-column="0"></td>
+                <td><input type="text" class="column-search" placeholder="Activity" data-column="1"></td>
+                <td><input type="text" class="column-search" placeholder="Log2FC" data-column="2"></td>
+                <td><input type="text" class="column-search" placeholder="Guide" data-column="3"></td>
+                <td><input type="text" class="column-search" placeholder="Parent guide" data-column="4"></td>
+                <td><input type="text" class="column-search" placeholder="Batch" data-column="5"></td>
+            </tr></tfoot>
             <tbody>${rows}</tbody>
         </table>
     `;
-    new DataTable('#mismatch-data-table', {
+    const table = new DataTable('#mismatch-data-table', {
         destroy: true,
         pageLength: 10,
         lengthMenu: [10, 25, 50],
@@ -244,7 +270,9 @@ function renderMismatchData(data) {
         order: [[2, 'asc']],
         layout: {
             topStart: 'buttons',
-            topEnd: 'search'
+            topEnd: 'search',
+            bottomStart: 'pageLength',
+            bottomEnd: 'info'
         },
         buttons: [
             {extend: 'copyHtml5', text: 'Copy'},
@@ -252,10 +280,15 @@ function renderMismatchData(data) {
         ],
         language: {
             search: 'Search guides:',
+            info: 'Total entries: _MAX_ (showing _START_ to _END_ of _TOTAL_ matching)',
             paginate: {
                 previous: '← Previous',
                 next: 'Next →'
             }
         }
+    });
+    $('#mismatch-data-table').on('keyup change', '.column-search', function() {
+        const columnIndex = $(this).data('column');
+        table.column(columnIndex).search($(this).val()).draw();
     });
 }

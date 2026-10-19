@@ -107,6 +107,9 @@
         <div id="gene-info-content"></div>
         <div class="plot-container plot-area--auto" id="plots-container" hidden>
             <div id="combined-gene-plot"></div>
+            <div class="message message-info">
+                Click a guide dot to automatically find and highlight that guide in the table below.
+            </div>
         </div>
     </div>
 </div>
@@ -117,6 +120,7 @@
         <div class="section-body--tight section-body--flush mb-2">
             <h3 class="text-primary mb-2">Guide Data</h3>
         </div>
+        <div id="guides-table-filter" class="table-filter-message" hidden></div>
         <div id="guides-table-container"></div>
     </div>
 </div>
@@ -135,5 +139,6 @@
 </script>
 <script src="{% static 'js/gene_autocomplete.js' %}"></script>
 <script src="{% static 'js/custom_slider.js' %}"></script>
+<script src="{% static 'js/table_filter.js' %}"></script>
 <script src="{% static 'js/gene_plot.js' %}?v=20260324"></script>
 {% endblock %}

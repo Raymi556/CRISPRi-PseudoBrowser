@@ -158,6 +158,7 @@ function createVolcanoPlot(data) {
                     width: 0.5
                 }
             },
+            customdata: nonSignificantGenes,
             text: nonSignificantGenes.map(r => 
                 `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>Stouffer p: ${r.fdr.toExponential(2)}`
             ),
@@ -183,6 +184,7 @@ function createVolcanoPlot(data) {
                     width: 1
                 }
             },
+            customdata: significantGenes,
             text: significantGenes.map(r => 
                 `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>Stouffer p: ${r.fdr.toExponential(2)}`
             ),
@@ -275,7 +277,22 @@ function createVolcanoPlot(data) {
         displaylogo: false
     };
     
-    Plotly.newPlot(plotDiv, traces, layout, config);
+    Plotly.newPlot(plotDiv, traces, layout, config).then(() => {
+        plotDiv.on('plotly_click', event => {
+            const point = event.points[0];
+            const record = point?.data?.customdata?.[point.pointNumber];
+            if (!record) {
+                return;
+            }
+            filterTableFromPlot({
+                tableSelector: '#genes-datatable',
+                columnIndex: 0,
+                value: record.gene_name,
+                label: 'gene',
+                messageId: 'genes-table-filter'
+            });
+        });
+    });
 }
 
 async function downloadPaperReadyVolcanoPlot() {
@@ -399,6 +416,7 @@ function buildPaperReadyVolcanoLayout(sourceLayout) {
  */
 function createGenesTable(records) {
     const tableContainer = document.getElementById('genes-table-container');
+    document.getElementById('genes-table-filter').hidden = true;
     
     if (!records || records.length === 0) {
         tableContainer.innerHTML = '<p class="empty-state">No genes available</p>';
@@ -429,6 +447,15 @@ function createGenesTable(records) {
                     <th>Product</th>
                 </tr>
             </thead>
+            <tfoot>
+                <tr>
+                    <td><input type="text" class="column-search" placeholder="Gene" data-column="0"></td>
+                    <td><input type="text" class="column-search" placeholder="PAO1 ID" data-column="1"></td>
+                    <td><input type="text" class="column-search" placeholder="Log2 FC" data-column="2"></td>
+                    <td><input type="text" class="column-search" placeholder="p-value" data-column="3"></td>
+                    <td><input type="text" class="column-search" placeholder="Product" data-column="4"></td>
+                </tr>
+            </tfoot>
             <tbody>
     `;
     
@@ -458,9 +485,12 @@ function createGenesTable(records) {
             ordering: true,
             order: [[3, 'asc']],
             pageLength: 10,
+            lengthMenu: [10, 25, 50],
             layout: {
                 topStart: 'buttons',
-                topEnd: 'search'
+                topEnd: 'search',
+                bottomStart: 'pageLength',
+                bottomEnd: 'info'
             },
             buttons: [
                 {extend: 'copyHtml5', text: 'Copy'},
@@ -468,11 +498,16 @@ function createGenesTable(records) {
             ],
             language: {
                 search: 'Search genes:',
+                info: 'Total entries: _MAX_ (showing _START_ to _END_ of _TOTAL_ matching)',
                 paginate: {
                     previous: '← Previous',
                     next: 'Next →'
                 }
             }
+        });
+        $('#genes-datatable').on('keyup change', '.column-search', function() {
+            const columnIndex = $(this).data('column');
+            table.column(columnIndex).search($(this).val()).draw();
         });
     }
 }

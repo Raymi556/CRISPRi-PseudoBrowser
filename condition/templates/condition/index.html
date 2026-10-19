@@ -34,6 +34,9 @@
     </div>
     <div class="plot-container plot-area--auto" id="plots-container" hidden>
         <div id="volcano-plot" class="plot-area--tall"></div>
+        <div class="message message-info">
+            Click a gene dot to automatically find and highlight that gene in the table below.
+        </div>
     </div>
 </div>
 
@@ -43,6 +46,7 @@
         <div class="section-body--tight section-body--flush mb-2">
             <h3 class="text-primary mb-2">Significant Genes</h3>
         </div>
+        <div id="genes-table-filter" class="table-filter-message" hidden></div>
         <div id="genes-table-container"></div>
     </div>
 </div>
@@ -57,5 +61,6 @@
     window.CSRF_TOKEN = '{{ csrf_token }}';
 </script>
 <script src="{% static 'js/custom_slider.js' %}"></script>
+<script src="{% static 'js/table_filter.js' %}"></script>
 <script src="{% static 'js/volcano_plot.js' %}?v=20260429"></script>
 {% endblock %}
