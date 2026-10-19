@@ -148,12 +148,101 @@ async function downloadComparePlot() {
         throw new Error('Plot is not available for download');
     }
 
-    await Plotly.downloadImage(plotDiv, {
-        format: 'png',
-        width: 1400,
-        height: 900,
-        filename: 'compare_heatmap'
+    const paperData = JSON.parse(JSON.stringify(plotDiv.data));
+    const paperLayout = buildPaperReadyCompareLayout(plotDiv.layout, paperData);
+    const exportWidth = 2200;
+    const exportHeight = Math.max(1400, 32 * (paperLayout.yaxis?.tickvals?.length || 0) + 500);
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-10000px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = `${exportWidth}px`;
+    tempDiv.style.height = `${exportHeight}px`;
+    document.body.appendChild(tempDiv);
+
+    try {
+        await Plotly.newPlot(tempDiv, paperData, paperLayout, {
+            displayModeBar: false,
+            displaylogo: false,
+            responsive: false,
+            staticPlot: true
+        });
+
+        await Plotly.downloadImage(tempDiv, {
+            format: 'png',
+            width: exportWidth,
+            height: exportHeight,
+            filename: 'compare_heatmap',
+            scale: 2
+        });
+    } finally {
+        Plotly.purge(tempDiv);
+        tempDiv.remove();
+    }
+}
+
+function buildPaperReadyCompareLayout(sourceLayout, data) {
+    const layout = JSON.parse(JSON.stringify(sourceLayout || {}));
+
+    layout.paper_bgcolor = '#ffffff';
+    layout.plot_bgcolor = '#ffffff';
+    layout.font = {
+        ...(layout.font || {}),
+        color: '#111111',
+        size: 22,
+        family: 'Arial, sans-serif'
+    };
+    layout.margin = {l: 130, r: 30, t: 170, b: 150};
+
+    ['xaxis', 'yaxis', 'xaxis2', 'yaxis2'].forEach(axisName => {
+        if (!layout[axisName]) {
+            return;
+        }
+
+        layout[axisName].color = '#111111';
+        layout[axisName].gridcolor = '#d9d9d9';
+        layout[axisName].tickfont = {
+            ...(layout[axisName].tickfont || {}),
+            size: 20,
+            color: '#111111'
+        };
+        if (layout[axisName].title) {
+            layout[axisName].title = {
+                ...layout[axisName].title,
+                font: {
+                    ...(layout[axisName].title.font || {}),
+                    size: 22,
+                    color: '#111111'
+                }
+            };
+        }
     });
+
+    if (layout.title) {
+        layout.title = {
+            ...layout.title,
+            font: {
+                ...(layout.title.font || {}),
+                size: 24,
+                color: '#111111'
+            }
+        };
+    }
+
+    data.forEach(trace => {
+        if (trace.colorbar?.title) {
+            trace.colorbar.title = {
+                ...trace.colorbar.title,
+                font: {
+                    ...(trace.colorbar.title.font || {}),
+                    size: 20,
+                    color: '#111111'
+                }
+            };
+        }
+    });
+
+    return layout;
 }
 
 async function renderHeatmap(data) {

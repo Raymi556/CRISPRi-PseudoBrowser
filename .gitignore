@@ -431,3 +431,4 @@ dataFiles/*
 .gitignore
 ARCHITECTURE.md
 downloads/management
+db.sqlite3

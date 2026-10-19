@@ -26,9 +26,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Download plot button
     const downloadBtn = document.getElementById('download-plot');
     if (downloadBtn) {
-        downloadBtn.addEventListener('click', function() {
-            const plotDiv = document.getElementById('volcano-plot');
-            Plotly.downloadImage(plotDiv, { format: 'png', width: 1000, height: 800, filename: 'volcano_plot' });
+        downloadBtn.addEventListener('click', async function() {
+            try {
+                await downloadPaperReadyVolcanoPlot();
+            } catch (error) {
+                showError(error.message || 'Failed to download plot');
+                console.error('Error downloading paper-ready volcano plot:', error);
+            }
         });
     }
 
@@ -224,25 +228,6 @@ function createVolcanoPlot(data) {
         });
     }
     
-    // Horizontal line for the Stouffer p-value threshold
-    {
-        const fdrLine = -Math.log10(0.05);
-        shapes.push({
-            type: 'line',
-            x0: 0,
-            y0: fdrLine,
-            x1: 1,
-            y1: fdrLine,
-            xref: 'paper',
-            yref: 'y',
-            line: {
-                color: 'rgba(220, 38, 38, 0.5)',
-                width: 2,
-                dash: 'dash'
-            }
-        });
-    }
-    
     // Create layout
     const thresholdTitle = '|log2FC| > 1, Stouffer p < 0.05';
 
@@ -291,6 +276,122 @@ function createVolcanoPlot(data) {
     };
     
     Plotly.newPlot(plotDiv, traces, layout, config);
+}
+
+async function downloadPaperReadyVolcanoPlot() {
+    const sourcePlotDiv = document.getElementById('volcano-plot');
+    if (!sourcePlotDiv || !sourcePlotDiv.data || !sourcePlotDiv.layout) {
+        throw new Error('Plot is not available for download');
+    }
+
+    const paperData = JSON.parse(JSON.stringify(sourcePlotDiv.data));
+    const paperLayout = buildPaperReadyVolcanoLayout(sourcePlotDiv.layout);
+    const exportWidth = 1800;
+    const exportHeight = 1400;
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-10000px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = `${exportWidth}px`;
+    tempDiv.style.height = `${exportHeight}px`;
+    document.body.appendChild(tempDiv);
+
+    try {
+        await Plotly.newPlot(tempDiv, paperData, paperLayout, {
+            displayModeBar: false,
+            displaylogo: false,
+            responsive: false,
+            staticPlot: true
+        });
+
+        await Plotly.downloadImage(tempDiv, {
+            format: 'png',
+            filename: 'volcano_plot',
+            width: exportWidth,
+            height: exportHeight,
+            scale: 2
+        });
+    } finally {
+        Plotly.purge(tempDiv);
+        tempDiv.remove();
+    }
+}
+
+function buildPaperReadyVolcanoLayout(sourceLayout) {
+    const layout = JSON.parse(JSON.stringify(sourceLayout || {}));
+
+    layout.paper_bgcolor = '#ffffff';
+    layout.plot_bgcolor = '#ffffff';
+    layout.font = {
+        ...(layout.font || {}),
+        color: '#111111',
+        size: 22,
+        family: 'Arial, sans-serif'
+    };
+    layout.margin = { t: 80, b: 110, l: 120, r: 50 };
+
+    ['xaxis', 'yaxis'].forEach(axisName => {
+        if (!layout[axisName]) {
+            return;
+        }
+
+        layout[axisName].color = '#111111';
+        layout[axisName].gridcolor = '#d9d9d9';
+        layout[axisName].tickfont = {
+            ...(layout[axisName].tickfont || {}),
+            size: 20,
+            color: '#111111'
+        };
+        layout[axisName].title = {
+            ...(layout[axisName].title || {}),
+            font: {
+                ...((layout[axisName].title && layout[axisName].title.font) || {}),
+                size: 22,
+                color: '#111111'
+            }
+        };
+        layout[axisName].zerolinecolor = '#777777';
+    });
+
+    if (layout.title) {
+        layout.title = {
+            ...layout.title,
+            text: layout.title.text.replace(', Stouffer p < 0.05', ''),
+            font: {
+                ...(layout.title.font || {}),
+                size: 24,
+                color: '#111111'
+            }
+        };
+    }
+
+    if (layout.legend) {
+        layout.legend = {
+            ...layout.legend,
+            bgcolor: '#ffffff',
+            bordercolor: '#111111',
+            borderwidth: 1,
+            font: {
+                ...(layout.legend.font || {}),
+                color: '#111111',
+                size: 18
+            }
+        };
+    }
+
+    if (layout.shapes) {
+        layout.shapes = layout.shapes
+            .filter(shape => !(shape.type === 'line' && shape.yref === 'y'))
+            .map(shape => {
+                const updatedShape = { ...shape };
+                if (updatedShape.line) {
+                    updatedShape.line = { ...updatedShape.line, color: '#555555' };
+                }
+                return updatedShape;
+            });
+    }
+
+    return layout;
 }
 
 /**

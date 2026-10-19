@@ -667,7 +667,7 @@ function buildPaperReadyLayout(sourceLayout) {
     layout.font = {
         ...(layout.font || {}),
         color: '#111111',
-        size: 17,
+        size: 22,
         family: 'Arial, sans-serif'
     };
     layout.margin = { t: 30, b: 90, l: 110, r: 30 };
@@ -681,14 +681,14 @@ function buildPaperReadyLayout(sourceLayout) {
         layout[axisName].gridcolor = '#d9d9d9';
         layout[axisName].tickfont = {
             ...(layout[axisName].tickfont || {}),
-            size: 15,
+            size: 20,
             color: '#111111'
         };
         layout[axisName].title = {
             ...(layout[axisName].title || {}),
             font: {
                 ...((layout[axisName].title && layout[axisName].title.font) || {}),
-                size: 17,
+                size: 22,
                 color: '#111111'
             }
         };
@@ -704,7 +704,7 @@ function buildPaperReadyLayout(sourceLayout) {
             font: {
                 ...(annotation.font || {}),
                 color: '#111111',
-                size: Math.max((annotation.font && annotation.font.size) || 10, 12)
+                size: Math.max((annotation.font && annotation.font.size) || 10, 16)
             }
         }));
     }
@@ -728,7 +728,7 @@ function buildPaperReadyLayout(sourceLayout) {
             font: {
                 ...(layout.legend.font || {}),
                 color: '#111111',
-                size: 14
+                size: 18
             }
         };
     }

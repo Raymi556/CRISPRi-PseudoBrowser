@@ -10,15 +10,117 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mismatch-form').addEventListener('submit', loadMismatchData);
     document.getElementById('mismatch-download').addEventListener('click', () => {
         if (mismatchData) {
-            Plotly.downloadImage(document.getElementById('mismatch-plot'), {
-                format: 'png',
-                width: 1200,
-                height: 800,
-                filename: 'mismatch_data'
+            downloadPaperReadyMismatchPlot().catch(error => {
+                const errorBox = document.getElementById('mismatch-error');
+                errorBox.textContent = error.message || 'Failed to download plot';
+                errorBox.hidden = false;
+                console.error('Error downloading paper-ready mismatch plot:', error);
             });
         }
     });
 });
+
+async function downloadPaperReadyMismatchPlot() {
+    const sourcePlotDiv = document.getElementById('mismatch-plot');
+    if (!sourcePlotDiv || !sourcePlotDiv.data || !sourcePlotDiv.layout) {
+        throw new Error('Plot is not available for download');
+    }
+
+    const paperData = JSON.parse(JSON.stringify(sourcePlotDiv.data));
+    const paperLayout = buildPaperReadyMismatchLayout(sourcePlotDiv.layout);
+    const exportWidth = 1800;
+    const exportHeight = 1200;
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-10000px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = `${exportWidth}px`;
+    tempDiv.style.height = `${exportHeight}px`;
+    document.body.appendChild(tempDiv);
+
+    try {
+        await Plotly.newPlot(tempDiv, paperData, paperLayout, {
+            displayModeBar: false,
+            displaylogo: false,
+            responsive: false,
+            staticPlot: true
+        });
+
+        await Plotly.downloadImage(tempDiv, {
+            format: 'png',
+            filename: 'mismatch_data',
+            width: exportWidth,
+            height: exportHeight,
+            scale: 2
+        });
+    } finally {
+        Plotly.purge(tempDiv);
+        tempDiv.remove();
+    }
+}
+
+function buildPaperReadyMismatchLayout(sourceLayout) {
+    const layout = JSON.parse(JSON.stringify(sourceLayout || {}));
+
+    layout.paper_bgcolor = '#ffffff';
+    layout.plot_bgcolor = '#ffffff';
+    layout.font = {
+        ...(layout.font || {}),
+        color: '#111111',
+        size: 22,
+        family: 'Arial, sans-serif'
+    };
+    layout.margin = { t: 50, b: 120, l: 120, r: 50 };
+
+    ['xaxis', 'yaxis'].forEach(axisName => {
+        if (!layout[axisName]) {
+            return;
+        }
+
+        layout[axisName].color = '#111111';
+        layout[axisName].gridcolor = '#d9d9d9';
+        layout[axisName].tickfont = {
+            ...(layout[axisName].tickfont || {}),
+            size: 20,
+            color: '#111111'
+        };
+        layout[axisName].title = {
+            ...(layout[axisName].title || {}),
+            font: {
+                ...((layout[axisName].title && layout[axisName].title.font) || {}),
+                size: 22,
+                color: '#111111'
+            }
+        };
+        layout[axisName].zerolinecolor = '#777777';
+    });
+
+    if (layout.legend) {
+        layout.legend = {
+            ...layout.legend,
+            bgcolor: '#ffffff',
+            bordercolor: '#111111',
+            borderwidth: 1,
+            font: {
+                ...(layout.legend.font || {}),
+                color: '#111111',
+                size: 18
+            }
+        };
+    }
+
+    if (layout.shapes) {
+        layout.shapes = layout.shapes.map(shape => {
+            const updatedShape = { ...shape };
+            if (updatedShape.line) {
+                updatedShape.line = { ...updatedShape.line, color: '#555555' };
+            }
+            return updatedShape;
+        });
+    }
+
+    return layout;
+}
 
 async function loadMismatchData(event) {
     event.preventDefault();
@@ -54,17 +156,8 @@ function renderMismatchData(data) {
     document.getElementById('mismatch-results').hidden = false;
     document.getElementById('mismatch-title').textContent =
         `${data.gene} (${data.PAO1_ID}) - ${data.condition}`;
-    const perfect = data.records.filter(record => record.type === 'perfect');
     const mismatch = data.records.filter(record => record.type === 'mismatch');
     const traces = [
-        {
-            x: perfect.map(record => record.y_pred),
-            y: perfect.map(record => record['LFC.adj']),
-            text: perfect.map(record => record.spacer),
-            mode: 'markers',
-            name: 'Perfect guides',
-            marker: {color: '#dc2626', size: 9}
-        },
         {
             x: mismatch.map(record => record.y_pred),
             y: mismatch.map(record => record['LFC.adj']),
