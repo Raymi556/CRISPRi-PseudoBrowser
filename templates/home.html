@@ -9,117 +9,122 @@
     <p class="page-subtitle">Interactive exploration of <em>Pseudomonas aeruginosa</em> CRISPRi screening data</p>
 </div>
 
-<!-- Current capabilities: shared card shell, section body, and callout styling come from main.css. -->
-<div class="card card--section card--compact">
+<div class="page-header--centered">
+    <p class="home-intro">
+        Move from a gene or guide-level observation to condition-wide hits, mismatch
+        behavior, pathway context, and cross-condition comparisons in one place.
+    </p>
+</div>
+
+<div class="card card--section card--compact guide-card">
     <div class="card-header">
-        <h2 class="card-header--flush card-header--large">Current Capabilities</h2>
+        <h2 class="card-header--flush card-header--large">Starting Guide</h2>
     </div>
-    <div class="section-body">
-        <div class="content-grid content-grid--one content-grid--compact mt-3">
-            <div class="content-stack">
-                <h3 class="text-accent text-lg">
-                    <a href="{% url 'gene:index' %}" class="link-accent">Gene Browser</a>
-                </h3>
-                <p class="text-muted line-height-loose mb-2">
-                    Visualize CRISPRi guide effects in <em>P. aeruginosa</em> genomic context with interactive plots. Search by gene name or PAO1 identifier, adjust genomic windows, and compare across experimental conditions.
-                </p>
-                <div class="feature-callout">
-                    <p class="feature-callout__title"><strong>Features:</strong></p>
-                    <ul class="feature-list">
-                        <li>Gene context visualization showing guide positions</li>
-                        <li>Guide-level Log2 fold change plots</li>
-                        <li>Multi-condition comparison</li>
-                        <li>Customizable genomic window size</li>
-                        <li>Interactive Plotly visualizations</li>
-                        <li>CSV data export</li>
-                    </ul>
-                </div>
+        <div class="guide-carousel" aria-roledescription="carousel" aria-label="Browser tab guides">
+            <button class="guide-carousel__control guide-carousel__control--previous" type="button" data-guide-previous aria-label="Previous guide">‹</button>
+            <div class="guide-carousel__slides">
+                <article class="guide-slide" data-guide-slide data-guide-title="Gene Browser" aria-label="Gene Browser guide">
+                    <span class="guide-slide__number">01</span>
+                    <div>
+                        <h3>Gene Browser</h3>
+                        <p>Search by gene name or PAO1 ID and inspect genomic context, guide positions, guide-level effects, and selected conditions.</p>
+                        <ol class="guide-steps">
+                            <li>Choose a genomic window around the target and one or more experimental conditions.</li>
+                            <li>Generate plots to see the gene in context and compare guide-level log2 fold-change measurements.</li>
+                            <li>Click plot points to locate the corresponding guide in the data table; use the plot download control when you need a figure.</li>
+                        </ol>
+                    </div>
+                </article>
+                <article class="guide-slide" data-guide-slide data-guide-title="Guides Browser" aria-label="Guides Browser guide" hidden>
+                    <span class="guide-slide__number">02</span>
+                    <div>
+                        <h3>Guides Browser</h3>
+                        <p>Find perfect guides for a target gene and rank them using efficacy, off-target, abundance, and observed effect measures.</p>
+                        <ol class="guide-steps">
+                            <li>Search for a gene name or PAO1 ID and select <strong>Find Guides</strong>.</li>
+                            <li>Compare Kawalek efficacy score, off-target count, abundance, median LFC, and maximum absolute LFC.</li>
+                            <li>Use conditions and batches as context before selecting a guide for follow-up work.</li>
+                        </ol>
+                    </div>
+                </article>
+                <article class="guide-slide" data-guide-slide data-guide-title="Mismatch Data" aria-label="Mismatch Data guide" hidden>
+                    <span class="guide-slide__number">03</span>
+                    <div>
+                        <h3>Mismatch Data</h3>
+                        <p>Explore graded mismatch-guide series for one gene and condition, then connect a plotted mismatch to its parent guide.</p>
+                        <ol class="guide-steps">
+                            <li>Enter a gene name or PAO1 ID and choose an available condition.</li>
+                            <li>Generate the plot to compare perfect and mismatch guides across the series.</li>
+                            <li>Click a mismatch point to highlight its parent guide in the accompanying table.</li>
+                        </ol>
+                    </div>
+                </article>
+                <article class="guide-slide" data-guide-slide data-guide-title="Condition Browser" aria-label="Condition Browser guide" hidden>
+                    <span class="guide-slide__number">04</span>
+                    <div>
+                        <h3>Condition Browser</h3>
+                        <p>Scan a complete experimental condition with an interactive volcano plot and a filterable table of significant genes.</p>
+                        <ol class="guide-steps">
+                            <li>Select a condition and generate its volcano plot.</li>
+                            <li>Read effect size against statistical significance, then click a gene point to find it in the significant-gene table.</li>
+                            <li>Filter the table for a focused list and download the rendered plot when documenting the result.</li>
+                        </ol>
+                    </div>
+                </article>
+                <article class="guide-slide" data-guide-slide data-guide-title="Pathway Analysis" aria-label="Pathway Analysis guide" hidden>
+                    <span class="guide-slide__number">05</span>
+                    <div>
+                        <h3>Pathway Analysis</h3>
+                        <p>Search COG or Gene Ontology terms, select linked genes, and send a focused gene set to Compare.</p>
+                        <ol class="guide-steps">
+                            <li>Select COG or Gene Ontology and search by accession or term name.</li>
+                            <li>Choose a term to inspect its records and linked genes, then select the genes relevant to your question.</li>
+                            <li>Import the selected genes to the shared starred list so they can be compared in the Compare tab.</li>
+                        </ol>
+                    </div>
+                </article>
+                <article class="guide-slide" data-guide-slide data-guide-title="Gene Set Comparison" aria-label="Gene Set Comparison guide" hidden>
+                    <span class="guide-slide__number">06</span>
+                    <div>
+                        <h3>Gene Set Comparison</h3>
+                        <p>Review starred genes and render a clustered heatmap across available conditions to compare their response patterns.</p>
+                        <ol class="guide-steps">
+                            <li>Review the starred genes and remove entries that do not belong in the set.</li>
+                            <li>Generate the heatmap to compare their responses across all available conditions.</li>
+                            <li>Inspect clustering for shared response patterns and download the heatmap for reporting.</li>
+                        </ol>
+                    </div>
+                </article>
+                <article class="guide-slide" data-guide-slide data-guide-title="Downloads" aria-label="Downloads guide" hidden>
+                    <span class="guide-slide__number">07</span>
+                    <div>
+                        <h3>Downloads</h3>
+                        <p>Export the database-backed records used by the browser, including annotations, guide measurements, summaries, mismatch observations, and pathway records.</p>
+                        <ol class="guide-steps">
+                            <li>Choose an export whose description matches the browser question you are investigating.</li>
+                            <li>Use annotation and manifest files to identify records; use observation and summary files for measurements.</li>
+                            <li>Keep the comparison and identifier fields when joining exports to preserve condition and gene context.</li>
+                        </ol>
+                    </div>
+                </article>
             </div>
+            <span class="guide-carousel__status" aria-live="polite"></span>
+            <div class="guide-carousel__dots" role="tablist" aria-label="Select a tab guide">
+                <button type="button" class="guide-dot" data-guide-dot="0" role="tab" aria-label="Show Gene Browser guide"></button>
+                <button type="button" class="guide-dot" data-guide-dot="1" role="tab" aria-label="Show Guides Browser guide"></button>
+                <button type="button" class="guide-dot" data-guide-dot="2" role="tab" aria-label="Show Mismatch Data guide"></button>
+                <button type="button" class="guide-dot" data-guide-dot="3" role="tab" aria-label="Show Condition Browser guide"></button>
+                <button type="button" class="guide-dot" data-guide-dot="4" role="tab" aria-label="Show Pathway Analysis guide"></button>
+                <button type="button" class="guide-dot" data-guide-dot="5" role="tab" aria-label="Show Gene Set Comparison guide"></button>
+                <button type="button" class="guide-dot" data-guide-dot="6" role="tab" aria-label="Show Downloads guide"></button>
+            </div>
+            <button class="guide-carousel__control guide-carousel__control--next" type="button" data-guide-next aria-label="Next guide">›</button>
         </div>
     </div>
 </div>
 
-<!-- Quick start guide: the numbered steps share the same badge and spacing classes. -->
-<div class="card card--section card--compact">
-    <div class="card-header">
-        <h2 class="card-header--flush card-header--large">Quick Start Guide</h2>
-    </div>
-    <div class="section-body">
-        <div class="step-list">
-            <div class="step-item">
-                <div class="step-badge step-badge--tilt-left">1</div>
-                <div class="step-content">
-                    <h4>Navigate to Gene Browser</h4>
-                    <p>Click on the "Gene" tab in the navigation bar or use the link above.</p>
-                </div>
-            </div>
-            
-            <div class="step-item">
-                <div class="step-badge step-badge--tilt-right">2</div>
-                <div class="step-content">
-                    <h4>Enter Gene Information</h4>
-                    <p>Type a gene name (e.g., <code class="code-chip">dnaN</code>) or PAO1 identifier (e.g., <code class="code-chip">PA0003</code>) in the search box.</p>
-                </div>
-            </div>
-            
-            <div class="step-item">
-                <div class="step-badge step-badge--tilt-left-small">3</div>
-                <div class="step-content">
-                    <h4>Adjust Parameters</h4>
-                    <p>Set the genomic window size (default: 5000 bp) and select one or more experimental conditions to compare.</p>
-                </div>
-            </div>
-            
-            <div class="step-item">
-                <div class="step-badge step-badge--tilt-right-small">4</div>
-                <div class="step-content">
-                    <h4>Generate Plots</h4>
-                    <p>Click "Generate Plots" to visualize the data. Interact with the plots and download results as CSV.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% endblock %}
 
-<!-- Coming soon section: the remaining cards reuse the same typography and spacing classes. -->
-<div class="card card--section card--compact">
-    <div class="card-header">
-        <h2 class="card-header--flush card-header--large">Coming Soon!</h2>
-    </div>
-    <div class="section-body section-body--tight">
-        <div class="content-grid content-grid--two content-grid--compact">
-            <div>
-                <h3 class="text-muted text-md mb-1">Guides Browser</h3>
-                <p class="text-muted line-height-normal mb-0">Browse and filter guide-level data across all experiments.</p>
-            </div>
-            
-            <div>
-                <h3 class="text-muted text-md mb-1">Condition Analysis</h3>
-                <p class="text-muted line-height-normal mb-0">Volcano plots and condition-specific comparisons.</p>
-            </div>
-            
-            <div>
-                <h3 class="text-muted text-md mb-1">Pathway Enrichment</h3>
-                <p class="text-muted line-height-normal mb-0">Pathway and gene ontology enrichment analysis.</p>
-            </div>
-            
-            <div>
-                <h3 class="text-muted text-md mb-1">Gene Comparison</h3>
-                <p class="text-muted line-height-normal mb-0">Compare multiple genes side-by-side.</p>
-            </div>
-            
-            <div>
-                <h3 class="text-muted text-md mb-1">Downloads</h3>
-                <p class="text-muted line-height-normal mb-0">Bulk data downloads and comprehensive documentation.</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Get Started Button -->
-<div class="cta-center">
-    <a href="{% url 'gene:index' %}" class="btn btn-primary btn--large">
-        Explore Gene Browser →
-    </a>
-</div>
+{% block extra_js %}
+<script src="{% static 'js/home_guide.js' %}"></script>
 {% endblock %}

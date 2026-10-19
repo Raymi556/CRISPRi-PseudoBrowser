@@ -1,9 +1,8 @@
-from tempfile import SpooledTemporaryFile
+import csv
 
-from django.http import FileResponse, Http404
+from django.http import Http404, StreamingHttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
-from openpyxl import Workbook
 
 from .models import (
     Comparison,
@@ -18,7 +17,9 @@ from .models import (
 DOWNLOAD_DATASETS = {
     "gene_annotation": {
         "label": "Gene annotation",
-        "filename": "gene_annotation.xlsx",
+        "description": "Reference identifiers, names, products, feature types, coordinates, and strands for joining results to the PAO1 genome.",
+        "use": "Use this as the lookup table for gene identity and genomic context.",
+        "filename": "gene_annotation.csv",
         "queryset": Gene.objects.all().order_by("pao1_id"),
         "columns": [
             "pao1_id", "pa14_id", "gene_name", "product_name", "category",
@@ -27,7 +28,9 @@ DOWNLOAD_DATASETS = {
     },
     "comparison_manifest": {
         "label": "Comparison manifest",
-        "filename": "comparison_manifest.xlsx",
+        "description": "The condition and batch labels used throughout the browser, including display order and comparison class.",
+        "use": "Use this to decode comparison IDs and preserve experimental context when joining exports.",
+        "filename": "comparison_manifest.csv",
         "queryset": Comparison.objects.all().order_by(
             "batch", "comparison_order", "comparison_id"
         ),
@@ -38,7 +41,9 @@ DOWNLOAD_DATASETS = {
     },
     "guide_metadata": {
         "label": "Guide metadata",
-        "filename": "guide_metadata.xlsx",
+        "description": "Guide sequences, perfect or mismatch type, predicted efficacy, abundance, GC, PAM, and off-target metadata.",
+        "use": "Use this to select or annotate guides before interpreting their measured effects.",
+        "filename": "guide_metadata.csv",
         "queryset": Guide.objects.all().order_by("gene__pao1_id", "spacer"),
         "columns": [
             "gene__pao1_id", "gene__gene_name", "spacer", "original",
@@ -49,7 +54,9 @@ DOWNLOAD_DATASETS = {
     },
     "guide_observations": {
         "label": "Guide observations",
-        "filename": "guide_observations.xlsx",
+        "description": "Guide-level LFC and statistical measurements for every guide and comparison.",
+        "use": "Use this for detailed guide-level analysis; it is the largest export.",
+        "filename": "guide_observations.csv",
         "queryset": GuideObservation.objects.all().order_by(
             "guide__gene__pao1_id", "guide__spacer", "comparison__comparison_id"
         ),
@@ -62,7 +69,9 @@ DOWNLOAD_DATASETS = {
     },
     "gene_condition_summaries": {
         "label": "Gene-condition summaries",
-        "filename": "gene_condition_summaries.xlsx",
+        "description": "Gene-level median LFC, Stouffer p-values, significance flags, and condition metadata.",
+        "use": "Use this for condition-wide screening, volcano-plot reproduction, and cross-condition summaries.",
+        "filename": "gene_condition_summaries.csv",
         "queryset": GeneConditionSummary.objects.all().order_by(
             "gene__pao1_id", "comparison__comparison_id", "guide_type"
         ),
@@ -75,7 +84,9 @@ DOWNLOAD_DATASETS = {
     },
     "mismatch_observations": {
         "label": "Mismatch observations",
-        "filename": "mismatch_observations.xlsx",
+        "description": "The perfect and mismatch guide measurements used by the Mismatch Data tab.",
+        "use": "Use this for mismatch-response analysis without downloading unrelated guide types.",
+        "filename": "mismatch_observations.csv",
         "queryset": GuideObservation.objects.filter(
             guide__guide_type__in=["perfect", "mismatch"]
         ).order_by(
@@ -91,7 +102,9 @@ DOWNLOAD_DATASETS = {
     },
     "pathway_cog": {
         "label": "COG pathway records",
-        "filename": "pao1_cog.xlsx",
+        "description": "COG accessions, terms, categories, and linked PAO1 genes used by Pathway Analysis.",
+        "use": "Use this to reproduce or annotate COG-based gene-set selection.",
+        "filename": "pao1_cog.csv",
         "queryset": PathwayRecord.objects.filter(dataset="cog"),
         "columns": [
             "pao1_id", "gene_name", "product_name", "accession",
@@ -100,7 +113,9 @@ DOWNLOAD_DATASETS = {
     },
     "pathway_go": {
         "label": "Gene Ontology pathway records",
-        "filename": "pao1_gene_ontology.xlsx",
+        "description": "Gene Ontology accessions, terms, categories, and linked PAO1 genes used by Pathway Analysis.",
+        "use": "Use this to reproduce or annotate GO-based gene-set selection.",
+        "filename": "pao1_gene_ontology.csv",
         "queryset": PathwayRecord.objects.filter(dataset="go"),
         "columns": [
             "pao1_id", "gene_name", "product_name", "accession",
@@ -109,18 +124,18 @@ DOWNLOAD_DATASETS = {
     },
 }
 
-def create_excel_file(dataset):
+class Echo:
+    def write(self, value):
+        return value
+
+
+def stream_csv_rows(dataset):
     columns = DOWNLOAD_DATASETS[dataset]["columns"]
-    file = SpooledTemporaryFile(max_size=10 * 1024 * 1024, mode="w+b")
-    workbook = Workbook(write_only=True)
-    worksheet = workbook.create_sheet(title="Data")
-    worksheet.append(columns)
+    writer = csv.writer(Echo())
+    yield writer.writerow(columns)
     values = DOWNLOAD_DATASETS[dataset]["queryset"].values_list(*columns)
     for row in values.iterator(chunk_size=1000):
-        worksheet.append(row)
-    workbook.save(file)
-    file.seek(0)
-    return file
+        yield writer.writerow(row)
 
 
 def index(request):
@@ -128,6 +143,9 @@ def index(request):
         {
             "key": key,
             "label": config["label"],
+            "description": config["description"],
+            "use": config["use"],
+            "large": key == "guide_observations",
             "url": f"/downloads/{key}/",
         }
         for key, config in DOWNLOAD_DATASETS.items()
@@ -140,12 +158,12 @@ def download_dataset(request, dataset):
     if dataset not in DOWNLOAD_DATASETS:
         raise Http404("Download dataset not found.")
 
-    file = create_excel_file(dataset)
-    return FileResponse(
-        file,
-        as_attachment=True,
-        filename=DOWNLOAD_DATASETS[dataset]["filename"],
-        content_type=(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ),
+    response = StreamingHttpResponse(
+        stream_csv_rows(dataset),
+        content_type="text/csv; charset=utf-8",
     )
+    response["Content-Disposition"] = (
+        f'attachment; filename="{DOWNLOAD_DATASETS[dataset]["filename"]}"'
+    )
+    response["Content-Encoding"] = "identity"
+    return response

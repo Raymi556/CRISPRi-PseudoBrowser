@@ -1,41 +1,14 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Downloads - CRISPRi-seq{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>Downloads</h1>
-    <p>Download database-backed browser datasets as Excel files</p>
+    <p>Download the database-backed records used by the browser as streamed CSV files</p>
 </div>
 
 <div class="content-grid downloads-grid">
-    <div class="card card--compact downloads-card">
-        <div class="card-header">Available Data Files</div>
-        <p class="text-muted mb-2">
-            These exports are generated from the database and contain the
-            browser data used by the analysis tabs.
-        </p>
-        <div class="download-list">
-            {% for dataset in datasets %}
-            <div class="download-list__item">
-                <div>
-                    <strong class="download-list__title">
-                        {{ dataset.label }}
-                    </strong>
-                </div>
-                <button class="btn btn-primary btn--tight download-button"
-                        type="button" data-download-url="{{ dataset.url }}">
-                    <span class="download-button__label">Download</span>
-                    <span class="spinner download-button__spinner" hidden></span>
-                </button>
-            </div>
-            {% empty %}
-            <p class="text-muted">No database-backed datasets are available.</p>
-            {% endfor %}
-        </div>
-    </div>
-
     <div class="card card--compact downloads-card">
         <div class="card-header">About This Browser</div>
         <p class="text-muted mb-2">
@@ -45,24 +18,17 @@
             annotations, and mismatch-guide measurements across the available
             experimental conditions.
         </p>
-        <h4 class="text-primary mt-3 mb-1">Available Datasets</h4>
-        <ul class="text-muted ms-4">
-            <li><strong>Gene annotation:</strong> gene identifiers, names,
-                products, genomic features, and coordinates.</li>
-            <li><strong>Comparison manifest:</strong> batches, comparison
-                labels, and comparison classes used by the browser.</li>
-            <li><strong>Guide metadata:</strong> guide sequences, guide types,
-                model scores, and guide-level metadata.</li>
-            <li><strong>Guide observations:</strong> guide-level effects and
-                statistical measurements for each comparison.</li>
-            <li><strong>Gene-condition summaries:</strong> median LFC,
-                Stouffer p-values, and significance fields used by Condition
-                and Compare.</li>
-            <li><strong>Mismatch observations:</strong> perfect and mismatch
-                guide measurements used by Mismatch Data.</li>
-            <li><strong>COG and Gene Ontology records:</strong> pathway
-                annotations used by the Pathway tab.</li>
-        </ul>
+        <h4 class="text-primary mt-3 mb-1">Choosing an export</h4>
+        <p class="text-muted">
+            Start with <strong>Gene annotation</strong> and
+            <strong>Comparison manifest</strong> for identifiers and condition
+            labels. Add <strong>Guide metadata</strong> for guide design
+            context, <strong>Gene-condition summaries</strong> for compact
+            screening results, or <strong>Guide observations</strong> when
+            guide-level measurements are required. Use the filtered
+            <strong>Mismatch observations</strong> or pathway records only for
+            those focused analyses.
+        </p>
         <h4 class="text-primary mt-3 mb-1">Dependencies</h4>
         <ul class="text-muted ms-4">
             <li>Python 3.11</li>
@@ -71,9 +37,35 @@
             <li>Plotly.js and DataTables</li>
         </ul>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'js/downloads_browser.js' %}"></script>
+    <div class="card card--compact downloads-card">
+        <div class="card-header">Available Data Files</div>
+        <p class="text-muted mb-2">
+            These exports contain only the reference, guide, measurement, and
+            pathway records needed to reproduce the browser’s analyses.
+        </p>
+        <div class="download-list">
+            {% for dataset in datasets %}
+            <div class="download-list__item">
+                <div>
+                    <strong class="download-list__title">
+                        {{ dataset.label }}
+                    </strong>
+                    <p class="download-list__description">{{ dataset.description }}</p>
+                    <p class="download-list__use"><strong>Best for:</strong> {{ dataset.use }}</p>
+                    {% if dataset.large %}
+                    <span class="download-list__note">Large export: allow time for the stream to complete.</span>
+                    {% endif %}
+                </div>
+                <a class="btn btn-primary btn--tight download-button"
+                   href="{{ dataset.url }}" download>
+                    Download
+                </a>
+            </div>
+            {% empty %}
+            <p class="text-muted">No database-backed datasets are available.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}

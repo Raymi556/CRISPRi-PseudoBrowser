@@ -1,8 +1,4 @@
 from django.test import TestCase
-from io import BytesIO
-
-from openpyxl import load_workbook
-
 from .models import (
     Comparison,
     Gene,
@@ -48,9 +44,11 @@ class DownloadModelTests(TestCase):
         self.assertContains(response, "Gene Ontology pathway records")
         self.assertContains(response, "Guide observations")
         self.assertContains(response, "Gene-condition summaries")
-        self.assertNotContains(response, "Generated on download")
+        self.assertContains(response, "streamed CSV files")
+        self.assertContains(response, "Large export")
+        self.assertContains(response, 'Download CSV')
 
-    def test_pathway_export_is_excel(self):
+    def test_pathway_export_is_streamed_csv(self):
         PathwayRecord.objects.create(
             dataset="cog",
             pao1_id="PA0001",
@@ -62,15 +60,12 @@ class DownloadModelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response["Content-Disposition"],
-            'attachment; filename="pao1_cog.xlsx"',
+            'attachment; filename="pao1_cog.csv"',
         )
-        content = b"".join(response.streaming_content)
-        workbook = load_workbook(BytesIO(content), read_only=True)
-        self.assertEqual(
-            list(workbook.active.values)[0][:2],
-            ("pao1_id", "gene_name"),
-        )
-        workbook.close()
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        content = b"".join(response.streaming_content).decode()
+        self.assertTrue(content.startswith("pao1_id,gene_name,product_name"))
+        self.assertIn("PA0001", content)
 
     def test_guide_observation_export_uses_database_rows(self):
         gene = Gene.objects.create(pao1_id="PA0002", gene_name="test_gene")
@@ -96,12 +91,7 @@ class DownloadModelTests(TestCase):
 
         response = self.client.get("/downloads/guide_observations/")
         self.assertEqual(response.status_code, 200)
-        workbook = load_workbook(
-            BytesIO(b"".join(response.streaming_content)), read_only=True
-        )
-        rows = list(workbook.active.values)
-        self.assertIn("guide__gene__pao1_id", rows[0])
-        flattened = [value for row in rows for value in row]
-        self.assertIn("PA0002", flattened)
-        self.assertIn(-1.25, flattened)
-        workbook.close()
+        content = b"".join(response.streaming_content).decode()
+        self.assertIn("guide__gene__pao1_id", content.splitlines()[0])
+        self.assertIn("PA0002", content)
+        self.assertIn("-1.25", content)
