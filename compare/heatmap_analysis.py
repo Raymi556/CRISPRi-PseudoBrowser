@@ -5,19 +5,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, leaves_list, to_tree
 from scipy.spatial.distance import pdist
 
-from gene.data_loader import (
-    get_available_conditions,
-    load_condition_gene_data,
-)
-
-
-def _resolve_lfc_column(df):
-    """Pick the first known LFC column present in the melted dataset."""
-    candidates = ["medLFC", "LFC.adj", "LFC", "lfc"]
-    for column in candidates:
-        if column in df.columns:
-            return column
-    raise ValueError("No supported LFC column found in melted results data.")
+from downloads.models import Comparison, GeneConditionSummary
 
 
 def _display_condition_label(condition):
@@ -64,12 +52,12 @@ def prepare_compare_heatmap_data(starred_genes):
     if not starred_genes:
         raise ValueError("No starred genes found. Add genes in Pathway first.")
 
-    melted = load_condition_gene_data()
-    lfc_column = _resolve_lfc_column(melted)
-
-    condition_list = get_available_conditions()
+    condition_list = list(
+        Comparison.objects.order_by("batch", "comparison_order")
+        .values_list("display_label", flat=True)
+    )
     if not condition_list:
-        raise ValueError("No conditions available in melted results.")
+        raise ValueError("No conditions available in the database.")
 
     starred_df = pd.DataFrame(starred_genes)
     if "PAO1_ID" not in starred_df.columns:
@@ -78,10 +66,24 @@ def prepare_compare_heatmap_data(starred_genes):
     starred_df["PAO1_ID"] = starred_df["PAO1_ID"].astype(str)
     starred_df = starred_df.drop_duplicates(subset=["PAO1_ID"])
 
-    filtered = melted[
-        melted["PAO1_ID"].astype(str).isin(starred_df["PAO1_ID"]) &
-        melted["condition"].isin(condition_list)
-    ][["PAO1_ID", "condition", lfc_column]].copy()
+    filtered = pd.DataFrame.from_records(
+        GeneConditionSummary.objects.filter(
+            gene__pao1_id__in=starred_df["PAO1_ID"].tolist(),
+            guide_type__iexact="perfect",
+        ).values(
+            "gene__pao1_id",
+            "comparison__display_label",
+            "med_lfc",
+        )
+    ).rename(
+        columns={
+            "gene__pao1_id": "PAO1_ID",
+            "comparison__display_label": "condition",
+            "med_lfc": "median_lfc",
+        }
+    )
+    if not filtered.empty:
+        filtered = filtered[filtered["condition"].isin(condition_list)]
 
     if filtered.empty:
         raise ValueError("No LFC values found for the current starred genes.")
@@ -90,10 +92,9 @@ def prepare_compare_heatmap_data(starred_genes):
 
     median_df = (
         filtered
-        .groupby(["PAO1_ID", "condition"], dropna=False)[lfc_column]
+        .groupby(["PAO1_ID", "condition"], dropna=False)["median_lfc"]
         .median()
         .reset_index()
-        .rename(columns={lfc_column: "median_lfc"})
     )
 
     matrix_df = median_df.pivot(index="PAO1_ID", columns="condition", values="median_lfc")

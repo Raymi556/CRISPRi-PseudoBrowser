@@ -1,46 +1,79 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Downloads - CRISPRi-seq{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>Downloads & Documentation</h1>
-    <p>Access raw data files and learn more about this browser</p>
+    <h1>Downloads</h1>
+    <p>Download database-backed browser datasets as Excel files</p>
 </div>
 
-<div class="grid grid-2">
-    <div class="card card--compact">
+<div class="content-grid downloads-grid">
+    <div class="card card--compact downloads-card">
         <div class="card-header">Available Data Files</div>
         <p class="text-muted mb-2">
-            Download the complete datasets used in this browser:
+            These exports are generated from the database and contain the
+            browser data used by the analysis tabs.
         </p>
-        
-        <div class="card-header card-header--large">Coming Soon!</div>
-    </div>
-
-    <div class="card card--compact">
-        <div class="card-header">About This Browser</div>
-        <p class="text-muted mb-2">
-            This CRISPRi-seq data browser provides an interactive and dynamic visualization, as well as analysis tools, for the exploration of genome-wide CRISPRi screening data in <em>Pseudomonas aeruginosa</em>.
-        </p>
-        <h4 class="text-primary mt-3 mb-1">Technology Stack</h4>
-        <ul class="text-muted ms-4">
-            <li>Python 3.11</li>
-            <li>Django 5.2 (Backend)</li>
-            <li>Plotly.js (Interactive and dinamic visualizations)</li>
-            <li>(Data processing????)</li>
-            <li>Modern vanilla JavaScript (ES6+/ES2015+)</li>
-        </ul>
-        
-        <h4 class="text-primary mt-3 mb-1">Documentation</h4>
-        <div class="text-muted">
-            <div class="card-header card-header--large">Coming Soon!</div>
+        <div class="download-list">
+            {% for dataset in datasets %}
+            <div class="download-list__item">
+                <div>
+                    <strong class="download-list__title">
+                        {{ dataset.label }}
+                    </strong>
+                </div>
+                <button class="btn btn-primary btn--tight download-button"
+                        type="button" data-download-url="{{ dataset.url }}">
+                    <span class="download-button__label">Download</span>
+                    <span class="spinner download-button__spinner" hidden></span>
+                </button>
+            </div>
+            {% empty %}
+            <p class="text-muted">No database-backed datasets are available.</p>
+            {% endfor %}
         </div>
     </div>
-</div>
 
-<div class="card card--compact">
-    <div class="card-header">Citation & Contact</div>
-    <div class="card-header card-header--large">Coming Soon!</div>
+    <div class="card card--compact downloads-card">
+        <div class="card-header">About This Browser</div>
+        <p class="text-muted mb-2">
+            This browser provides interactive tools for exploring CRISPRi-seq
+            screening data in <em>Pseudomonas aeruginosa</em>. The browser
+            combines gene-level summaries, guide-level observations, pathway
+            annotations, and mismatch-guide measurements across the available
+            experimental conditions.
+        </p>
+        <h4 class="text-primary mt-3 mb-1">Available Datasets</h4>
+        <ul class="text-muted ms-4">
+            <li><strong>Gene annotation:</strong> gene identifiers, names,
+                products, genomic features, and coordinates.</li>
+            <li><strong>Comparison manifest:</strong> batches, comparison
+                labels, and comparison classes used by the browser.</li>
+            <li><strong>Guide metadata:</strong> guide sequences, guide types,
+                model scores, and guide-level metadata.</li>
+            <li><strong>Guide observations:</strong> guide-level effects and
+                statistical measurements for each comparison.</li>
+            <li><strong>Gene-condition summaries:</strong> median LFC,
+                Stouffer p-values, and significance fields used by Condition
+                and Compare.</li>
+            <li><strong>Mismatch observations:</strong> perfect and mismatch
+                guide measurements used by Mismatch Data.</li>
+            <li><strong>COG and Gene Ontology records:</strong> pathway
+                annotations used by the Pathway tab.</li>
+        </ul>
+        <h4 class="text-primary mt-3 mb-1">Dependencies</h4>
+        <ul class="text-muted ms-4">
+            <li>Python 3.11</li>
+            <li>Django 5.2</li>
+            <li>SQLite database</li>
+            <li>Plotly.js and DataTables</li>
+        </ul>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/downloads_browser.js' %}"></script>
 {% endblock %}

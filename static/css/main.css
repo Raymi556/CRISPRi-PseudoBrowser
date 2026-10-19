@@ -898,6 +898,42 @@ input[type="range"]::-moz-range-thumb:hover {
     width: 100%;
 }
 
+.download-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.downloads-card {
+    border-top: 3px solid var(--accent-red);
+}
+
+.downloads-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+}
+
+.download-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.download-list__item:hover {
+    background-color: rgba(220, 38, 38, 0.08);
+    border-color: var(--accent-red-dark);
+}
+
+.download-list__title {
+    color: var(--text-primary);
+}
+
 .card-header--large {
     font-weight: bold;
     font-size: 1.5em;

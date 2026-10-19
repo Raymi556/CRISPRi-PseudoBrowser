@@ -139,8 +139,8 @@ def write_tsv(frame: pd.DataFrame, path: Path, columns: list[str]) -> int:
 def main() -> None:
     args = parse_args()
     root = args.project_root.resolve()
-    input_root = root / "dataFiles2" / "edgeR_manuscript_subset"
-    output_dir = (args.output_dir or root / "dataFiles2" / "prepared_browser").resolve()
+    input_root = root / "data_import" / "edgeR_manuscript_subset"
+    output_dir = (args.output_dir or root / "data_import" / "prepared_browser").resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     guide_frames: dict[str, pd.DataFrame] = {}
@@ -222,7 +222,7 @@ def main() -> None:
         how="left",
     )
     model_scores_path = (
-        root / "dataFiles2" / "mismatch_tab" / "Lib1_all_guides_with_model_scores.tsv.gz"
+        root / "data_import" / "mismatch_tab" / "Lib1_all_guides_with_model_scores.tsv.gz"
     )
     model_scores = pd.read_csv(
         model_scores_path,

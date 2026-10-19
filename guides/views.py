@@ -1,9 +1,10 @@
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 import pandas as pd
 
-from gene.data_loader import load_melted_results
+from downloads.models import GuideObservation
 
 
 def index(request):
@@ -16,14 +17,35 @@ def get_data(request):
     if not query:
         return JsonResponse({"error": "Enter a gene name or PAO1 ID."}, status=400)
 
-    data = load_melted_results()
-    selected = data[
-        data["type"].astype(str).str.lower().eq("perfect")
-        & (
-            data["PAO1_ID"].astype(str).str.lower().eq(query)
-            | data["gene_name"].astype(str).str.lower().eq(query)
+    selected = pd.DataFrame.from_records(
+        GuideObservation.objects.filter(
+            Q(guide__gene__pao1_id__iexact=query)
+            | Q(guide__gene__gene_name__iexact=query),
+            guide__guide_type__iexact="perfect",
+        ).values(
+            "guide__gene__pao1_id",
+            "guide__gene__gene_name",
+            "guide__spacer",
+            "guide__predicted_efficacy_score",
+            "guide__off_target_n",
+            "lfc_adj",
+            "guide__mean_abund_50m",
+            "comparison__display_label",
+            "comparison__batch",
         )
-    ].copy()
+    ).rename(
+        columns={
+            "guide__gene__pao1_id": "PAO1_ID",
+            "guide__gene__gene_name": "gene_name",
+            "guide__spacer": "spacer",
+            "guide__predicted_efficacy_score": "predicted_efficacy_score",
+            "guide__off_target_n": "off_target_n",
+            "lfc_adj": "LFC.adj",
+            "guide__mean_abund_50m": "mean_abund_50M",
+            "comparison__display_label": "condition",
+            "comparison__batch": "batch",
+        }
+    )
     if selected.empty:
         return JsonResponse({"error": f"No perfect guides found for {query}."}, status=404)
 

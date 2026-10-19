@@ -12,6 +12,9 @@ function clearGuidesError() {
 
 function renderGuideResults(data) {
     const body = document.querySelector('#guide-ranking-table tbody');
+    if ($.fn.dataTable.isDataTable('#guide-ranking-table')) {
+        $('#guide-ranking-table').DataTable().destroy();
+    }
     body.innerHTML = data.records.map((record) => `
         <tr>
             <td><code class="code-chip">${record.spacer}</code></td>
@@ -25,9 +28,6 @@ function renderGuideResults(data) {
         </tr>
     `).join('');
 
-    if ($.fn.dataTable.isDataTable('#guide-ranking-table')) {
-        $('#guide-ranking-table').DataTable().destroy();
-    }
     new DataTable('#guide-ranking-table', {
         pageLength: 10,
         lengthMenu: [10, 25, 50],

@@ -38,6 +38,17 @@ mamba run -n pseudoBrowser pip install -r requirements.txt
 mamba run -n pseudoBrowser python manage.py migrate
 ```
 
+Import the prepared browser and pathway data into SQLite:
+
+```bash
+mamba run -n pseudoBrowser python manage.py import_browser_data
+mamba run -n pseudoBrowser python manage.py import_pathway_data
+```
+
+Normal browser requests and Downloads exports use the imported database
+records. Developer import and backup instructions are in
+`DATABASE_IMPORT.md`.
+
 ### 4. Start Development Server
 
 ```bash
@@ -48,8 +59,8 @@ The browser will be available at: `http://127.0.0.1:8000/`
 
 ## Manuscript-subset browser data
 
-The browser reads the prepared TSV files in
-`dataFiles2/prepared_browser/`. These files preserve the B1-B4 batch labels,
+The database is populated from prepared TSV files in
+`data_import/prepared_browser/`. These files preserve the B1-B4 batch labels,
 aminoglycoside/FBS treatment comparisons, matched controls, and mismatch-guide
 records:
 
@@ -58,7 +69,7 @@ records:
 - `guide_data.tsv`
 - `mismatch_data.tsv`
 
-Regenerate the files with:
+Regenerate the files from the analysis inputs in `data_import/` with:
 
 ```bash
 mamba run -n pseudoBrowser python scripts/prepare_browser_data.py
@@ -72,5 +83,9 @@ Kawalek efficacy score and experimental guide metrics. The response shape
 leaves room for additional model-score columns when those files are added.
 
 For manual validation, open `/gene/`, `/condition/`, `/pathway/`, `/guides/`,
-and `/mismatch/`. Check the plots and verify that each data table supports
-searching, sorting, paging, Copy, and Excel export without a CSV action.
+`/mismatch/`, `/compare/`, and `/downloads/`. Check the plots and verify that
+each data table supports searching, sorting, paging, Copy, and Excel export
+without a CSV action. Downloads provides on-demand database-backed Excel
+exports for gene annotation, comparisons, guide metadata and observations,
+gene-condition summaries, mismatch observations, COG, and Gene Ontology
+records. Workbooks are generated only when their Download button is pressed.

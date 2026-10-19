@@ -1,35 +1,52 @@
 """Condition-level analysis for the manuscript-subset browser data."""
 
 import numpy as np
-from gene.data_loader import load_condition_gene_data
+from downloads.models import Comparison, GeneConditionSummary
 
 
 def prepare_volcano_data(condition, lfc_threshold=1.0, fdr_threshold=0.05):
     """Prepare fixed-threshold volcano data for one display condition."""
     del lfc_threshold, fdr_threshold
-    data = load_condition_gene_data()
-    selected = data[data['condition'] == condition].copy()
-    if selected.empty:
+    selected = list(
+        GeneConditionSummary.objects.filter(
+            comparison__display_label=condition,
+            guide_type__iexact="perfect",
+        ).values(
+            "gene__pao1_id",
+            "gene__gene_name",
+            "gene__product_name",
+            "gene__category",
+            "gene__feature_type",
+            "comparison__batch",
+            "comparison__comparison_class",
+            "med_lfc",
+            "p_stouffer",
+            "log10_p_stouffer",
+            "is_significant",
+        )
+    )
+    if not selected:
         return {'error': f'No data found for condition {condition}'}
 
-    selected = selected.dropna(subset=['medLFC', 'p_stouffer'])
-    selected['log10_p_stouffer'] = -np.log10(
-        selected['p_stouffer'].clip(lower=1e-300)
-    )
     records = []
-    for _, row in selected.iterrows():
+    for row in selected:
+        if row["med_lfc"] is None or row["p_stouffer"] is None:
+            continue
+        log10_p = row["log10_p_stouffer"]
+        if log10_p is None:
+            log10_p = -np.log10(max(row["p_stouffer"], 1e-300))
         records.append({
-            'PAO1_ID': row.get('PAO1_ID', ''),
-            'gene_name': row.get('gene_name', row.get('PAO1_ID', '')),
-            'product_name': row.get('product_name', ''),
-            'lfc': float(row['medLFC']),
+            'PAO1_ID': row['gene__pao1_id'],
+            'gene_name': row['gene__gene_name'] or row['gene__pao1_id'],
+            'product_name': row['gene__product_name'],
+            'lfc': float(row['med_lfc']),
             'fdr': float(row['p_stouffer']),
-            'log10_fdr': float(row['log10_p_stouffer']),
+            'log10_fdr': float(log10_p),
             'is_significant': bool(row['is_significant']),
-            'category': row.get('category', ''),
-            'feature_type': row.get('feature_type', ''),
-            'batch': row.get('batch', ''),
-            'comparison_class': row.get('comparison_class', ''),
+            'category': row['gene__category'],
+            'feature_type': row['gene__feature_type'],
+            'batch': row['comparison__batch'],
+            'comparison_class': row['comparison__comparison_class'],
         })
 
     return {
@@ -40,11 +57,15 @@ def prepare_volcano_data(condition, lfc_threshold=1.0, fdr_threshold=0.05):
         'lfc_threshold': 1.0,
         'fdr_threshold': 0.05,
         'significance_rule': 'abs(log2FC) > 1 and Stouffer p-value < 0.05',
-        'max_log10_fdr': float(selected['log10_p_stouffer'].max()),
+        'max_log10_fdr': max(
+            (record['log10_fdr'] for record in records), default=0.0
+        ),
     }
 
 
 def get_volcano_conditions():
     """Return all prepared display conditions."""
-    data = load_condition_gene_data()
-    return sorted(data['condition'].dropna().unique().tolist())
+    return list(
+        Comparison.objects.order_by("batch", "comparison_order")
+        .values_list("display_label", flat=True)
+    )
