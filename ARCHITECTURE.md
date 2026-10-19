@@ -8,7 +8,7 @@ This document describes the Django project structure, request routing, data flow
 flowchart LR
     Browser["Browser"]
     DB[(SQLite db.sqlite3)]
-    TSV["dataFiles/*.tsv and dataFiles2/prepared_browser/*.tsv<br/>Scientific datasets"]
+    Prepared["data_import/*.tsv<br/>Developer import artifacts"]
     CDN["External CDNs<br/>jQuery, DataTables, JSZip, Plotly"]
     CSS["static/css/main.css"]
     IMG["static/images/map-pin.svg"]
@@ -36,7 +36,7 @@ flowchart LR
         GeneListAPI --> DataLoader["gene.data_loader"]
         GeneIndex --> DataLoader
         GeneAnalysis --> DataLoader
-        GeneModels["gene/models.py<br/>No concrete models"]
+        GeneModels["gene/models.py<br/>No app-owned models"]
     end
 
     subgraph Condition["condition app"]
@@ -45,7 +45,7 @@ flowchart LR
         ConditionIndex --> ConditionTemplate["condition/index.html"]
         VolcanoAPI --> ConditionAnalysis["condition_analysis.prepare_volcano_data"]
         ConditionIndex --> ConditionAnalysis
-        ConditionModels["condition/models.py<br/>No concrete models"]
+        ConditionModels["condition/models.py<br/>No app-owned models"]
     end
 
     subgraph Pathway["pathway app"]
@@ -83,8 +83,7 @@ flowchart LR
         GuidesURLs --> GuidesView["guides.views.index"]
         GuidesURLs --> GuidesDataAPI["GET /guides/api/data/"]
         GuidesView --> GuidesTemplate["guides/index.html<br/>Guide ranking table"]
-        GuidesDataAPI --> GuidesData["Prepared guide TSV<br/>Kawalek score and experimental metrics"]
-        GuidesModels["guides/models.py<br/>No concrete models"]
+        GuidesDataAPI --> DownloadsModels
     end
 
     subgraph Mismatch["mismatch app"]
@@ -92,20 +91,20 @@ flowchart LR
         MismatchURLs --> MismatchDataAPI["POST /mismatch/api/data/"]
         MismatchIndex --> MismatchTemplate["mismatch/index.html"]
         MismatchDataAPI --> MismatchAnalysis["mismatch.analysis.prepare_mismatch_data"]
-        MismatchAnalysis --> TSV
+        MismatchAnalysis --> DownloadsModels
     end
 
     subgraph Downloads["downloads app"]
         DownloadsURLs --> DownloadsView["downloads.views.index"]
-        DownloadsView --> DownloadsTemplate["downloads/index.html"]
-        DownloadsModels["downloads/models.py<br/>No concrete models"]
+        DownloadsView --> DownloadsTemplate["downloads/index.html<br/>On-demand Excel exports"]
+        DownloadsModels["downloads/models.py<br/>Imported browser and pathway models"]
     end
 
     HomeView --> HomeTemplate["templates/home.html"]
-    DataLoader --> TSV
-    GeneAnalysis --> TSV
-    ConditionAnalysis --> TSV
-    HeatmapAnalysis --> TSV
+    DataLoader --> DownloadsModels
+    GeneAnalysis --> DownloadsModels
+    ConditionAnalysis --> DownloadsModels
+    HeatmapAnalysis --> DownloadsModels
 
     subgraph SharedTemplates["Shared template layer"]
         BaseTemplate["templates/base.html"]
@@ -196,11 +195,11 @@ Root routes in `crispriseq_browser/urls.py`:
 | `/admin/` | Django admin | Administration of registered models |
 | `/` | `crispriseq_browser.views.home` | Home page |
 | `/gene/` | `gene.urls` | Gene browser and APIs |
-| `/guides/` | `guides.urls` | Guides placeholder page |
+| `/guides/` | `guides.urls` | Guides ranking page and API |
 | `/condition/` | `condition.urls` | Condition browser and volcano API |
 | `/pathway/` | `pathway.urls` | Pathway browser and starred-gene APIs |
 | `/compare/` | `compare.urls` | Starred-gene comparison and heatmap APIs |
-| `/downloads/` | `downloads.urls` | Downloads/information placeholder page |
+| `/downloads/` | `downloads.urls` | On-demand database-backed Excel downloads |
 
 ### API Endpoints
 
@@ -231,26 +230,26 @@ Root routes in `crispriseq_browser/urls.py`:
 
 ### Gene browser
 
-1. `gene.views.index` loads available conditions and gene length limits from `gene.data_loader`.
+1. `gene.views.index` loads available conditions and gene length limits from database-backed helpers.
 2. The view renders `gene/index.html` with default gene, window, conditions, and slider bounds.
 3. `gene_autocomplete.js` requests the gene-list API and caches the result in `localStorage` for up to 24 hours.
 4. `gene_plot.js` submits the selected gene, window, and conditions to `get_gene_data`.
-5. `gene_analysis.prepare_gene_plot_data` uses cached TSV data from `gene.data_loader` and returns JSON-ready plot data.
+5. `gene_analysis.prepare_gene_plot_data` uses database-backed annotation and guide-observation queries and returns JSON-ready plot data.
 6. Plotly renders genomic and guide-level plots; DataTables renders the guide table and CSV export controls.
 
 ### Condition browser
 
 1. `condition.views.index` obtains available conditions from `condition_analysis` and renders defaults.
 2. `volcano_plot.js` submits the selected condition and thresholds.
-3. `condition_analysis.prepare_volcano_data` reads condition result TSV files with pandas and prepares volcano records.
+3. `condition_analysis.prepare_volcano_data` reads database summaries and prepares volcano records.
 4. The JavaScript renders the Plotly volcano chart and a DataTables result table.
 5. Condition selections can be forwarded to the Gene browser using query parameters.
 
 ### Pathway browser
 
-1. `pathway.views.index` loads available pathway datasets through `gene.data_loader`.
+1. `pathway.views.index` loads available pathway datasets through database-backed helpers.
 2. `pathway_browser.js` requests dataset records and term suggestions.
-3. Selecting a term calls `term-genes`, which combines file-backed gene associations with database starred-state information.
+3. Selecting a term calls `term-genes`, which combines database pathway associations with starred-state information.
 4. Checkbox changes are submitted to `sync-starred`.
 5. `StarredGene` rows are inserted, updated, or deleted in SQLite.
 6. The browser uses DataTables for dataset records and links dataset terms back into the term-selection workflow.
@@ -280,10 +279,11 @@ The only project model is `pathway.StarredGene`:
 
 The model is registered with Django admin in `pathway/admin.py`. The other app `models.py` files contain no concrete models.
 
-## File-backed Data
+## Imported Data and Preparation Files
 
-Manuscript experimental data is loaded from the prepared TSV files under
-`dataFiles2/prepared_browser/`, primarily through `gene/data_loader.py`:
+Manuscript experimental data is imported into the Downloads app models from
+the prepared TSV files under `data_import/prepared_browser/`. The preparation
+files are no longer runtime sources for the migrated browser features:
 
 - `condition_gene_data.tsv`: gene annotations, coordinates, conditions, median
   LFCs, Stouffer p-values, and fixed significance fields.
@@ -292,17 +292,23 @@ Manuscript experimental data is loaded from the prepared TSV files under
 - `mismatch_data.tsv`: perfect and mismatch guide series.
 - `comparison_manifest.tsv`: selected treatment and matched-control comparisons.
 
-The original files under `dataFiles2/edgeR_manuscript_subset/` are preparation
+The original files under `data_import/edgeR_manuscript_subset/` are preparation
 inputs, not runtime sources. The legacy `dataFiles/` experimental result files
-and guide library are no longer used by the browser runtime. Static COG and GO
-pathway annotation remains under `dataFiles/` because it is separate from the
-manuscript experimental dataset.
+and guide library are no longer used by the browser runtime. Pathway records
+are also imported into `PathwayRecord`; the source files are required only by
+the import command.
 
 The remaining static pathway files are:
 
 - `PAO1_cog.tsv`: COG pathway associations.
 - `PAO1_gene_ontology.tsv`: GO pathway associations.
 - `pathways.tsv`: pathway-related records.
+
+The Downloads app exports the imported records as Excel workbooks through
+`/downloads/`, including gene annotation, comparison manifest, guide metadata,
+guide observations, gene-condition summaries, mismatch observations, COG, and
+Gene Ontology records. Workbooks are generated only when requested by the
+user; the Downloads page does not generate or size them during page loading.
 
 Dataframes are cached in process memory by the loader. No background data-refresh service is present.
 
@@ -323,8 +329,8 @@ Page templates:
 - `condition/templates/condition/index.html`: condition controls, volcano plot, and result table.
 - `pathway/templates/pathway/index.html`: dataset selector, term search, linked genes, and dataset table.
 - `compare/templates/compare/index.html`: starred-gene list and heatmap.
-- `guides/templates/guides/index.html`: placeholder page.
-- `downloads/templates/downloads/index.html`: project information and placeholder documentation.
+- `guides/templates/guides/index.html`: guide ranking controls and table.
+- `downloads/templates/downloads/index.html`: database-backed Excel export controls and browser information.
 
 JavaScript modules:
 
@@ -371,16 +377,18 @@ Configured middleware includes:
 - Messages middleware.
 - Clickjacking protection.
 
-The repository contains no custom middleware, signals, Celery tasks, scheduled jobs, management commands, or asynchronous background processing. Analysis and TSV loading occur synchronously during HTTP requests.
+The repository contains no custom middleware, signals, Celery tasks, scheduled jobs, or asynchronous background processing. Excel workbooks are generated synchronously only when a user requests a download.
 
 ## Coupling Notes
 
 - `pathway` owns the `StarredGene` model, but `compare.views` imports it directly from `pathway.models`.
-- `gene.data_loader` is a shared dependency of Gene, Pathway, and Compare.
+- `gene.data_loader` is a shared database-backed query helper for Gene and Pathway.
 - Compare’s heatmap depends on both persistent starred-gene records and Gene’s condition-result data.
 - The Condition and Gene browsers are loosely coupled through query parameters and links.
 - Templates inject endpoint URLs and CSRF tokens into global JavaScript variables.
 - JavaScript is tightly coupled to template element IDs and those injected global variables.
 - Plotly and DataTables are shared presentation dependencies loaded by the base template.
-- Guides and Downloads currently have no data or API integration.
-- All app test modules are placeholders and do not currently verify behavior.
+- Guides, Mismatch, Condition, Compare, and Downloads use the imported
+  Downloads models for normal runtime data access. Downloads creates Excel
+  workbooks synchronously when a user requests an export.
+- Focused app tests cover the database-backed browser and export behavior.
