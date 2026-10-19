@@ -2,8 +2,6 @@
 Data loading utilities for CRISPRi-seq Browser
 """
 import pandas as pd
-from pathlib import Path
-from django.conf import settings
 
 # Cache for loaded data to avoid reloading on every request
 _data_cache = {}
@@ -11,113 +9,51 @@ _data_cache = {}
 PATHWAY_DATASETS = {
     'cog': {
         'label': 'COG',
-        'file': 'PAO1_cog.tsv'
     },
     'go': {
         'label': 'Gene Ontology',
-        'file': 'PAO1_gene_ontology.tsv'
     }
 }
 
-
-def _read_pathway_file(file_name):
-    """Read pathway datasets as tab-separated files."""
-    data_path = get_data_path() / file_name
-    return pd.read_csv(data_path, sep='\t', on_bad_lines='skip')
-
-
-def _normalize_columns(df):
-    """Normalize column names used by COG/GO files."""
-    normalized = df.copy()
-    normalized.columns = [str(col).strip().replace('  ', ' ') for col in normalized.columns]
-    return normalized
-
-
-def _require_columns(df, required):
-    """Validate required columns and raise a clear error on mismatch."""
-    missing = [col for col in required if col not in df.columns]
-    if missing:
-        raise ValueError(f"Missing required columns: {', '.join(missing)}")
-
-def get_data_path():
-    """Get the path to the dataFiles directory"""
-    return Path(settings.BASE_DIR) / 'dataFiles'
-
-def get_prepared_data_path():
-    """Get the path to the prepared manuscript-subset browser data."""
-    return Path(settings.BASE_DIR) / 'dataFiles2' / 'prepared_browser'
-
 def load_pao1_annotation():
-    """Load annotation embedded in the prepared browser data."""
+    """Load gene annotation from the Downloads database."""
     if 'pao1' not in _data_cache:
-        data_path = get_prepared_data_path() / 'condition_gene_data.tsv'
-        columns = [
-            'PAO1_ID',
-            'PA14_ID',
-            'gene_name',
-            'product_name',
-            'category',
-            'feature_type',
-            'start',
-            'end',
-            'strand',
-        ]
-        annotation = pd.read_csv(data_path, sep='\t', usecols=columns)
-        _data_cache['pao1'] = annotation.drop_duplicates('PAO1_ID')
+        from downloads.models import Gene
+        rows = Gene.objects.values(
+            'pao1_id', 'pa14_id', 'gene_name', 'product_name', 'category',
+            'feature_type', 'start', 'end', 'strand'
+        )
+        _data_cache['pao1'] = pd.DataFrame.from_records(rows).rename(
+            columns={
+                'pao1_id': 'PAO1_ID',
+                'pa14_id': 'PA14_ID',
+                'gene_name': 'gene_name',
+                'product_name': 'product_name',
+                'category': 'category',
+                'feature_type': 'feature_type',
+                'start': 'start',
+                'end': 'end',
+                'strand': 'strand',
+            }
+        )
     return _data_cache['pao1']
-
-def load_fl_guides():
-    """Load guide metadata embedded in the prepared browser data."""
-    if 'fl_guides' not in _data_cache:
-        data_path = get_prepared_data_path() / 'guide_data.tsv'
-        columns = [
-            'spacer',
-            'pam',
-            'downstream',
-            'off_target_n',
-            'mean_abund_50M',
-            'offset',
-            'gc',
-            'predicted_efficacy_score',
-        ]
-        guides = pd.read_csv(data_path, sep='\t', usecols=columns)
-        _data_cache['fl_guides'] = guides.drop_duplicates('spacer')
-    return _data_cache['fl_guides']
-
-def load_melted_results():
-    """Load melted results (guide-level data)"""
-    if 'melted_results' not in _data_cache:
-        data_path = get_prepared_data_path() / 'guide_data.tsv'
-        _data_cache['melted_results'] = pd.read_csv(data_path, sep='\t')
-    return _data_cache['melted_results']
-
-def load_condition_gene_data():
-    """Load prepared gene-level condition data."""
-    if 'condition_gene_data' not in _data_cache:
-        data_path = get_prepared_data_path() / 'condition_gene_data.tsv'
-        _data_cache['condition_gene_data'] = pd.read_csv(data_path, sep='\t')
-    return _data_cache['condition_gene_data']
-
 
 def load_pao1_cog():
     """Load PAO1 COG annotation data."""
     if 'pao1_cog' not in _data_cache:
-        cog_df = _normalize_columns(_read_pathway_file(PATHWAY_DATASETS['cog']['file']))
-        _require_columns(cog_df, ['PAO1 ID', 'Accession', 'Name', 'Category'])
-
-        cog_df['PAO1 ID'] = cog_df['PAO1 ID'].fillna('').astype(str).str.strip()
-        cog_df['Accession'] = cog_df['Accession'].fillna('').astype(str).str.strip()
-        cog_df['Name'] = cog_df['Name'].fillna('').astype(str).str.strip()
-        cog_df = cog_df[
-            (cog_df['PAO1 ID'] != '')
-            & (cog_df['PAO1 ID'].str.lower() != 'nan')
-            & (cog_df['Accession'] != '')
-            & (cog_df['Accession'].str.lower() != 'nan')
-            & (cog_df['Name'] != '')
-            & (cog_df['Name'].str.lower() != 'nan')
-        ]
-
-        _data_cache['pao1_cog'] = cog_df
+        from downloads.models import PathwayRecord
+        rows = PathwayRecord.objects.filter(dataset='cog').values(
+            'pao1_id', 'product_name', 'accession', 'term_name', 'category'
+        )
+        _data_cache['pao1_cog'] = pd.DataFrame.from_records(rows).rename(
+            columns={
+                'pao1_id': 'PAO1 ID',
+                'product_name': 'Product Description',
+                'accession': 'Accession',
+                'term_name': 'Name',
+                'category': 'Category',
+            }
+        )
 
     return _data_cache['pao1_cog']
 
@@ -125,23 +61,21 @@ def load_pao1_cog():
 def load_pao1_gene_ontology():
     """Load PAO1 Gene Ontology annotation data."""
     if 'pao1_go' not in _data_cache:
-        go_df = _normalize_columns(_read_pathway_file(PATHWAY_DATASETS['go']['file']))
-        _require_columns(go_df, ['PAO1 ID', 'Accession', 'Name', 'Category'])
-
-        go_df['PAO1 ID'] = go_df['PAO1 ID'].fillna('').astype(str).str.strip()
-        go_df['Accession'] = go_df['Accession'].fillna('').astype(str).str.strip()
-        go_df['Name'] = go_df['Name'].fillna('').astype(str).str.strip()
-        go_df['Category'] = go_df['Category'].fillna('').astype(str).str.strip().str.lower()
-        go_df = go_df[
-            (go_df['PAO1 ID'] != '')
-            & (go_df['PAO1 ID'].str.lower() != 'nan')
-            & (go_df['Accession'] != '')
-            & (go_df['Accession'].str.lower() != 'nan')
-            & (go_df['Name'] != '')
-            & (go_df['Name'].str.lower() != 'nan')
-        ]
-
-        _data_cache['pao1_go'] = go_df
+        from downloads.models import PathwayRecord
+        rows = PathwayRecord.objects.filter(dataset='go').values(
+            'pao1_id', 'gene_name', 'product_name',
+            'accession', 'term_name', 'category'
+        )
+        _data_cache['pao1_go'] = pd.DataFrame.from_records(rows).rename(
+            columns={
+                'pao1_id': 'PAO1 ID',
+                'gene_name': 'Gene Name',
+                'product_name': 'Product Description',
+                'accession': 'Accession',
+                'term_name': 'Name',
+                'category': 'Category',
+            }
+        )
 
     return _data_cache['pao1_go']
 
@@ -241,32 +175,26 @@ def get_pathway_dataset_records(dataset):
 
 def get_available_conditions():
     """Get list of available experimental conditions"""
-    melted = load_melted_results()
-    return sorted(melted['condition'].unique().tolist())
+    from downloads.models import Comparison
+    return list(
+        Comparison.objects.order_by('batch', 'comparison_order')
+        .values_list('display_label', flat=True)
+    )
 
 def get_gene_list():
     """Get cached list of genes for autocomplete"""
     if 'gene_list' not in _data_cache:
-        pao1 = load_pao1_annotation()
-        
-        # Create list of gene entries for autocomplete
-        gene_list = []
-        
-        # Add all unique gene names (non-empty)
-        for gene_name in pao1['gene_name'].dropna().unique():
-            if gene_name and gene_name.strip():
-                gene_list.append({
-                    'value': gene_name,
-                    'type': 'gene_name'
-                })
-        
-        # Add all PAO1 IDs
-        for pao1_id in pao1['PAO1_ID'].unique():
-            gene_list.append({
-                'value': pao1_id,
-                'type': 'pao1_id'
-            })
-        
+        from downloads.models import Gene
+        gene_list = [
+            {'value': gene_name, 'type': 'gene_name'}
+            for gene_name in Gene.objects.exclude(
+                gene_name=''
+            ).values_list('gene_name', flat=True)
+        ]
+        gene_list.extend(
+            {'value': pao1_id, 'type': 'pao1_id'}
+            for pao1_id in Gene.objects.values_list('pao1_id', flat=True)
+        )
         _data_cache['gene_list'] = gene_list
     
     return _data_cache['gene_list']
@@ -281,25 +209,3 @@ def get_gene_length_limits():
             'max': int(gene_lengths.max())
         }
     return _data_cache['gene_length_limits']
-
-def load_condition_hits(condition):
-    """Load prepared gene-level data for a specific condition."""
-    cache_key = f'condition_hits_{condition}'
-    if cache_key not in _data_cache:
-        data = load_condition_gene_data()
-        _data_cache[cache_key] = data[data['condition'] == condition].copy()
-    
-    return _data_cache[cache_key]
-
-def get_volcano_conditions():
-    """Get prepared display conditions available for volcano plots."""
-    if 'volcano_conditions' not in _data_cache:
-        _data_cache['volcano_conditions'] = sorted(
-            load_condition_gene_data()['condition'].dropna().unique().tolist()
-        )
-    
-    return _data_cache['volcano_conditions']
-
-def clear_cache():
-    """Clear the data cache (useful for testing/development)"""
-    _data_cache.clear()
