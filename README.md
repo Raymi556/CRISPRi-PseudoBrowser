@@ -1,92 +1,146 @@
-# CRISPRi-seq Data Browser (Django Version)
+# CRISPRi-seq Data Browser
 
-Interactive web application for exploring CRISPRi-seq screening data, built with Django 5.2 and Plotly.js.
+The CRISPRi-seq Data Browser is a Django application for exploring
+CRISPR-interference screening data from *Pseudomonas aeruginosa*. It connects
+gene context, guide-level measurements, mismatch behavior, experimental
+conditions, pathway annotations, and cross-condition comparisons in one
+interactive browser.
 
-## Technology Stack
+## What the browser provides
 
-- **Backend**: Django 5.2, Python 3.11
-- **Data Processing**: Pandas, NumPy, Scipy
-- **Visualization**: Plotly.js (client-side), Chart.js compatible
-- **Styling**: Custom CSS with CSS variables for theming
-- **Environment Management**: Mamba/Conda
+- **Gene Browser**: Search by gene name or PAO1 identifier, inspect genomic
+  context and guide positions, compare conditions, and view guide-level
+  effects.
+- **Guides Browser**: Find perfect guides for a gene and compare efficacy,
+  off-target counts, abundance, and observed effects.
+- **Mismatch Data**: Examine perfect and mismatch guide series for one gene
+  and condition.
+- **Condition Browser**: Explore a condition-wide volcano plot and identify
+  significant genes.
+- **Pathway Analysis**: Search COG or Gene Ontology terms, inspect linked
+  genes, and create a focused gene set.
+- **Gene Set Comparison**: Use starred genes to generate a clustered heatmap
+  across conditions.
+- **Downloads**: Export the records needed for external analysis as streamed
+  CSV files.
 
-## Installation & Setup
+## Requirements
 
-### 1. Create Mamba/Conda Environment
+- Linux OS
+- Conda or Miniconda
+- Python 3.11
+
+The application uses Django, Pandas, NumPy, SciPy, OpenPyXL, and Plotly. The
+required versions are defined in `requirements.txt`.
+
+## Quick setup
+
+The repository includes `build.sh` to create the environment, install
+dependencies, and reconstruct `db.sqlite3` from the compressed database parts
+in `data_import/`.
+
+From the repository root, run:
 
 ```bash
-mamba create -n pseudoBrowser python=3.11 -y
-mamba activate pseudoBrowser
+./build.sh
 ```
 
-### 2. Install Dependencies
+The script stops and displays the error if Conda, the dependencies, or the
+database parts cannot be found.
+
+Start the browser:
 
 ```bash
-cd /home/rgoitia/10_apps/CRISPRi-PseudoBrowser
+conda activate pseudoBrowser
+python manage.py runserver
+```
+
+Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in a browser.
+
+## Manual installation
+
+From the repository root:
+
+```bash
+conda create -n pseudoBrowser python=3.11 -y
+conda activate pseudoBrowser
 pip install -r requirements.txt
 ```
 
-Or using mamba:
+Reconstruct the database if the compressed database parts are present:
 
 ```bash
-mamba run -n pseudoBrowser pip install -r requirements.txt
+cat data_import/db_part_*.gz | gunzip > db.sqlite3
 ```
 
-### 3. Run Migrations
+Apply Django migrations:
 
 ```bash
-mamba run -n pseudoBrowser python manage.py migrate
+python manage.py migrate
 ```
 
-Import the prepared browser and pathway data into SQLite:
+Start the development server:
 
 ```bash
-mamba run -n pseudoBrowser python manage.py import_browser_data
-mamba run -n pseudoBrowser python manage.py import_pathway_data
+python manage.py runserver
 ```
 
-Normal browser requests and Downloads exports use the imported database
-records. Developer import and backup instructions are in
-`DATABASE_IMPORT.md`.
+Stop the server with `ctrl/cmd+C`.
 
-### 4. Start Development Server
+## Using the browser for different questions
 
-```bash
-mamba run -n pseudoBrowser python manage.py runserver
-```
+### Investigate one gene
 
-The browser will be available at: `http://127.0.0.1:8000/`
+Open **Gene Browser**, search by gene name or PAO1 ID, choose the genomic
+window and conditions, then generate the plots. Use the genomic view to
+inspect nearby features and guide placement, and use the guide table to
+compare individual measurements. Click plot points to locate the matching
+guide in the table.
 
-## Manuscript-subset browser data
+### Select a guide
 
-The database is populated from prepared TSV files in
-`data_import/prepared_browser/`. These files preserve the B1-B4 batch labels,
-aminoglycoside/FBS treatment comparisons, matched controls, and mismatch-guide
-records:
+Open **Guides Browser** and search for the target gene. Compare the guide
+efficacy score, off-target count, median abundance, median LFC, maximum
+absolute LFC, conditions, and batches before choosing a guide for follow-up
+work.
 
-- `comparison_manifest.tsv`
-- `condition_gene_data.tsv`
-- `guide_data.tsv`
-- `mismatch_data.tsv`
+### Assess mismatch effects
 
-Regenerate the files from the analysis inputs in `data_import/` with:
+Open **Mismatch Data**, select a gene and condition, and generate the plot.
+Compare the perfect guide with the mismatch series to assess how mismatches
+alter the measured effect. Click a mismatch point to highlight its parent
+guide in the table.
 
-```bash
-mamba run -n pseudoBrowser python scripts/prepare_browser_data.py
-```
+### Find condition-wide hits
 
-Condition significance is fixed at `abs(log2FC) > 1` and Stouffer
-`p < 0.05`. The Condition page displays the resulting volcano data, while
-Mismatch Data at `/mismatch/` provides the graded mismatch-guide analysis.
-Guides at `/guides/` ranks perfect guides for a gene using the available
-Kawalek efficacy score and experimental guide metrics. The response shape
-leaves room for additional model-score columns when those files are added.
+Open **Condition Browser**, select an experimental condition, and generate the
+volcano plot. Use effect size and statistical significance together when
+interpreting hits. Click a point to find the gene in the significant-gene
+table, then filter the table for a focused result set.
 
-For manual validation, open `/gene/`, `/condition/`, `/pathway/`, `/guides/`,
-`/mismatch/`, `/compare/`, and `/downloads/`. Check the plots and verify that
-each data table supports searching, sorting, paging, Copy, and Excel export
-without a CSV action. Downloads provides on-demand, streamed CSV exports for
-gene annotation, comparisons, guide metadata and observations, gene-condition
-summaries, mismatch observations, COG, and Gene Ontology records. The large
-guide-observation export is streamed in database-sized chunks instead of
-building an XLSX workbook in memory.
+### Add functional context
+
+Open **Pathway Analysis**, select COG or Gene Ontology, and search by
+accession or term name. Inspect the linked genes, select the genes relevant
+to the question, and import them into the shared starred-gene list.
+
+### Compare a gene set
+
+Open **Compare** after curating genes in Gene Browser or Pathway Analysis.
+Review and remove unwanted starred genes, generate the heatmap, and inspect
+clusters for shared response patterns across conditions.
+
+### Perform external analysis
+
+Open **Downloads** and choose the smallest export that answers the question:
+
+- Use **Gene annotation** for identifiers and genomic features.
+- Use **Comparison manifest** to decode conditions, batches, and comparison
+  classes.
+- Use **Guide metadata** for guide design and quality information.
+- Use **Gene-condition summaries** for compact condition-wide analysis.
+- Use **Guide observations** for detailed guide-level measurements.
+- Use **Mismatch observations** for focused mismatch analysis.
+- Use **COG** or **Gene Ontology records** for pathway annotations.
+
+Downloads are streamed CSV files.
