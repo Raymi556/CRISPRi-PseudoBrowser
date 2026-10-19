@@ -7,7 +7,7 @@
 **Key Technologies:**
 - Backend: Django 5.x with Python 3.11+
 - Frontend: Plotly.js 2.27.0 for interactive visualizations, DataTables 2.3.x for data tables
-- Data Format: Prepared tab-separated values (TSV) files in `dataFiles2/prepared_browser/`
+- Data Format: Prepared tab-separated values (TSV) files in `data_import/prepared_browser/`
 - Styling: Custom CSS with CSS variables for dark theme
 
 ---
@@ -135,7 +135,7 @@ CRISPRi-PseudoBrowser/
 │   │   └── volcano_plot.js             # Volcano plot + threshold controls
 │   └── images/
 │
-├── dataFiles2/prepared_browser/        # Runtime manuscript-subset TSV files
+├── data_import/prepared_browser/       # Developer database-import TSV files
 │   ├── comparison_manifest.tsv
 │   ├── condition_gene_data.tsv
 │   ├── guide_data.tsv
