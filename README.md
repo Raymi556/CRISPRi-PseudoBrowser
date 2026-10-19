@@ -85,7 +85,8 @@ leaves room for additional model-score columns when those files are added.
 For manual validation, open `/gene/`, `/condition/`, `/pathway/`, `/guides/`,
 `/mismatch/`, `/compare/`, and `/downloads/`. Check the plots and verify that
 each data table supports searching, sorting, paging, Copy, and Excel export
-without a CSV action. Downloads provides on-demand database-backed Excel
-exports for gene annotation, comparisons, guide metadata and observations,
-gene-condition summaries, mismatch observations, COG, and Gene Ontology
-records. Workbooks are generated only when their Download button is pressed.
+without a CSV action. Downloads provides on-demand, streamed CSV exports for
+gene annotation, comparisons, guide metadata and observations, gene-condition
+summaries, mismatch observations, COG, and Gene Ontology records. The large
+guide-observation export is streamed in database-sized chunks instead of
+building an XLSX workbook in memory.
