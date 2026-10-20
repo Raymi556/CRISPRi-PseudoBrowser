@@ -51,11 +51,17 @@ database parts cannot be found.
 Start the browser:
 
 ```bash
-conda activate pseudoBrowser
-python manage.py runserver
+./run_server.sh
+```
+
+or
+
+```bash
+/path/to/CRISPRi-PseudoBrowser/run_server.sh
 ```
 
 Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in a browser.
+Stop the server with `ctrl+C` (or `cmd+C` on macOS).
 
 ## Manual installation
 
@@ -82,10 +88,11 @@ python manage.py migrate
 Start the development server:
 
 ```bash
-python manage.py runserver
+python manage.py runserver --insecure
 ```
 
-Stop the server with `ctrl/cmd+C`.
+Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in a browser.
+Stop the server with `ctrl+C` (or `cmd+C` on macOS).
 
 ## Using the browser for different questions
 
