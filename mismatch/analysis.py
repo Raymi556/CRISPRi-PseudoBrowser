@@ -136,3 +136,32 @@ def prepare_mismatch_data(gene_input, condition):
         "predicted": predicted,
         "summary": summary,
     }
+
+
+def prepare_mismatch_panels(genes, conditions, max_pairs=12):
+    """Prepare bounded mismatch results for each requested gene/comparison pair."""
+    pairs = [(gene, condition) for gene in genes for condition in conditions]
+    if len(pairs) > max_pairs:
+        return {
+            "error": (
+                f"Too many mismatch panels requested ({len(pairs)}); "
+                f"the maximum is {max_pairs}."
+            )
+        }
+
+    panels = []
+    for gene, condition in pairs:
+        result = prepare_mismatch_data(gene, condition)
+        if "error" in result:
+            panels.append({
+                "gene_input": gene,
+                "condition": condition,
+                "error": result["error"],
+            })
+        else:
+            panels.append({
+                "gene_input": gene,
+                "condition": condition,
+                "data": result,
+            })
+    return {"panels": panels}

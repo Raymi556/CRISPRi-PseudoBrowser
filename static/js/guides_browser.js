@@ -33,12 +33,24 @@ function renderGuideResults(data) {
         lengthMenu: [10, 25, 50],
         searching: true,
         ordering: true,
-        layout: {topStart: 'buttons', topEnd: 'search'},
+        layout: {
+            topStart: 'buttons',
+            topEnd: 'search',
+            bottomStart: 'pageLength',
+            bottomEnd: ['info', 'paging']
+        },
         buttons: [
             {extend: 'copyHtml5', text: 'Copy'},
             {extend: 'excelHtml5', text: 'Excel'}
         ],
-        order: [[1, 'desc']]
+        order: [[1, 'desc']],
+        language: {
+            info: 'Total entries: _TOTAL_',
+            paginate: {
+                previous: '← Previous',
+                next: 'Next →'
+            }
+        }
     });
     document.getElementById('guides-results').hidden = false;
 }

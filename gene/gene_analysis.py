@@ -72,6 +72,15 @@ def get_genes_in_region(region_start, region_end):
     
     return genes_in_region
 
+
+def get_annotation_bounds():
+    """Return the available PAO1 coordinate bounds."""
+    pao1 = load_pao1_annotation()
+    return {
+        'start': 0,
+        'end': int(pao1[['start', 'end']].max().max()),
+    }
+
 def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
     """
     Get guide-level data for specific genes and conditions
@@ -168,7 +177,13 @@ def calculate_gene_level_median_lfc(guides_df):
     return medians_df.to_dict('records')
 
 
-def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
+def prepare_gene_plot_data(
+    gene_input,
+    window=5000,
+    conditions=None,
+    region_start=None,
+    region_end=None,
+):
     """
     Prepare all data needed for gene visualization
     
@@ -194,8 +209,20 @@ def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
     
     target_gene = gene_matches.iloc[0]
     
-    # Get genomic region
-    region = get_genomic_region(target_gene, window)
+    if (region_start is None) != (region_end is None):
+        return {'error': 'Both region_start and region_end are required.'}
+
+    if region_start is not None:
+        bounds = get_annotation_bounds()
+        if region_start < bounds['start'] or region_end > bounds['end']:
+            return {'error': 'Requested genomic region is outside the PAO1 annotation.'}
+        if region_end <= region_start:
+            return {'error': 'Requested genomic region must have a positive width.'}
+        if region_end - region_start > 250000:
+            return {'error': 'Requested genomic region is too wide; maximum width is 250000 bp.'}
+        region = {'start': region_start, 'end': region_end}
+    else:
+        region = get_genomic_region(target_gene, window)
     
     # Get all genes in the region
     genes_in_region = get_genes_in_region(region['start'], region['end'])

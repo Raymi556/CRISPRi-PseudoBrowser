@@ -7,6 +7,9 @@
 let currentData = null;
 let geneAutocomplete = null;
 let windowSlider = null;
+let geneRangeRequest = 0;
+let geneRangeTimer = null;
+let geneRangeLoading = false;
 
 function setHidden(element, hidden) {
     if (element) {
@@ -142,13 +145,9 @@ async function loadGeneData() {
         }
         
         currentData = data;
-        
-        // Display gene info
+        currentData.selected_conditions = selectedConditions;
         displayGeneInfo(data.target_gene);
-        
-        // Create plots
-        createCombinedGenePlot(data.genes, data.guides, data.region);
-        createGuidesTable(data.guides);
+        renderGeneData(data, true);
         
         showPlots();
         
@@ -157,6 +156,68 @@ async function loadGeneData() {
         console.error('Error loading gene data:', error);
     } finally {
         showLoading(false);
+    }
+
+    function renderGeneData(data, filterTarget = false) {
+        createCombinedGenePlot(data.genes, data.guides, data.region);
+        createGuidesTable(data.guides);
+        if (filterTarget) {
+            applyInitialGeneTableFilter(data.target_gene);
+        }
+    }
+
+    function scheduleGeneRangeLoad(start, end) {
+        if (!currentData || geneRangeLoading) {
+            return;
+        }
+        clearTimeout(geneRangeTimer);
+        geneRangeTimer = setTimeout(() => {
+            loadGeneRange(start, end);
+        }, 250);
+    }
+
+    async function loadGeneRange(start, end) {
+        if (!currentData || geneRangeLoading) {
+            return;
+        }
+
+        const requestId = ++geneRangeRequest;
+        geneRangeLoading = true;
+        showLoading(true);
+        hideError();
+        try {
+            const response = await fetch(window.GENE_DATA_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': window.CSRF_TOKEN
+                },
+                body: JSON.stringify({
+                    gene: currentData.target_gene.PAO1_ID,
+                    region_start: Math.round(start),
+                    region_end: Math.round(end),
+                    conditions: currentData.selected_conditions || []
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to load the selected genomic range.');
+            }
+            if (requestId !== geneRangeRequest) {
+                return;
+            }
+            currentData = data;
+            displayGeneInfo(data.target_gene);
+            renderGeneData(data);
+        } catch (error) {
+            showError(error.message);
+            console.error('Error loading genomic range:', error);
+        } finally {
+            if (requestId === geneRangeRequest) {
+                geneRangeLoading = false;
+                showLoading(false);
+            }
+        }
     }
 }
 
@@ -315,14 +376,32 @@ function createCombinedGenePlot(genes, guides, region) {
         displaylogo: false
     };
 
+    if (plotDiv.data) {
+        Plotly.purge(plotDiv);
+    }
     Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces, ...geneLayer.traces], layout, config).then(() => {
+        plotDiv.on('plotly_relayout', event => {
+            const start = Number(event['xaxis.range[0]'] ?? event['xaxis2.range[0]']);
+            const end = Number(event['xaxis.range[1]'] ?? event['xaxis2.range[1]']);
+            if (Number.isFinite(start) && Number.isFinite(end)
+                && (start !== currentData.region.start || end !== currentData.region.end)) {
+                scheduleGeneRangeLoad(start, end);
+            }
+        });
         plotDiv.on('plotly_click', event => {
             const point = event.points[0];
             const selectedGene = point && point.data && point.data.customdata
                 ? point.data.customdata[point.pointNumber]
                 : null;
-            if (point && point.data && point.data.name === 'Genes' && selectedGene) {
-                selectGeneFromRegion(selectedGene);
+            if (point && point.data
+                && (point.data.name === 'Genes' || point.data.xaxis === 'x2')
+                && selectedGene && selectedGene.PAO1_ID) {
+                try {
+                    selectGeneFromRegion(selectedGene);
+                } catch (error) {
+                    showError(error.message || 'Unable to select the gene.');
+                    console.error('Error selecting gene from region:', error);
+                }
                 return;
             }
             const guide = point && point.data && point.data.customdata
@@ -426,6 +505,8 @@ function buildGeneContextLayer(genes) {
         type: 'scatter',
         name: 'Genes',
         showlegend: false,
+        xaxis: 'x2',
+        yaxis: 'y2',
         marker: {size: 26, color: 'rgba(0,0,0,0)'},
         customdata: [],
         hovertemplate: '<b>%{customdata.gene_name}</b><br>%{customdata.PAO1_ID}<br>Click to select<extra></extra>'
@@ -479,9 +560,12 @@ function buildGeneContextLayer(genes) {
             },
             textangle: 90
         });
-        geneTrace.x.push((gene.start + gene.end) / 2);
-        geneTrace.y.push(y);
-        geneTrace.customdata.push(gene);
+        const geneCenter = (gene.start + gene.end) / 2;
+        [gene.start, geneCenter, gene.end].forEach(position => {
+            geneTrace.x.push(position);
+            geneTrace.y.push(y);
+            geneTrace.customdata.push(gene);
+        });
     });
 
     return { shapes: shapes, annotations: annotations, traces: [geneTrace] };
@@ -490,23 +574,24 @@ function buildGeneContextLayer(genes) {
 function selectGeneFromRegion(gene) {
     if (!gene || !gene.PAO1_ID) return;
     const input = document.getElementById('gene-input');
-    if (input) input.value = gene.gene_name || gene.PAO1_ID;
-    currentData.selected_gene_filter = gene.PAO1_ID;
-    const table = $('#guidesDataTable').DataTable();
-    if (table) {
-        table.column(0).search(gene.gene_name || gene.PAO1_ID).draw();
+    if (input) {
+        input.value = gene.gene_name || gene.PAO1_ID;
     }
-    const filter = document.getElementById('guides-table-filter');
-    if (filter) {
-        filter.hidden = false;
-        filter.innerHTML = `Showing guides for <em>${gene.gene_name || gene.PAO1_ID}</em> `
-            + `<button type="button" class="btn btn-secondary btn--tight" id="clear-gene-filter">Clear gene filter</button>`;
-        document.getElementById('clear-gene-filter').onclick = () => {
-            table.column(0).search('').draw();
-            filter.hidden = true;
-            currentData.selected_gene_filter = null;
-        };
+    loadGeneData();
+}
+
+function applyInitialGeneTableFilter(gene) {
+    if (!gene || !$.fn.dataTable.isDataTable('#guidesDataTable')) {
+        return;
     }
+    const label = gene.gene_name || gene.PAO1_ID;
+    filterTableFromPlot({
+        tableSelector: '#guidesDataTable',
+        columnIndex: gene.gene_name ? 0 : 1,
+        value: label,
+        label: gene.gene_name ? 'gene' : 'PAO1 ID',
+        messageId: 'guides-table-filter'
+    });
 }
 
 function buildLFCTraces(guides) {
@@ -642,14 +727,14 @@ function createGuidesTable(guides) {
             topStart: 'buttons',
             topEnd: 'search',
             bottomStart: 'pageLength',
-            bottomEnd: 'info'
+            bottomEnd: ['info', 'paging']
         },
         buttons: [
             {extend: 'copyHtml5', text: 'Copy'},
             {extend: 'excelHtml5', text: 'Excel'}
         ],
         language: {
-            info: 'Total entries: _MAX_ (showing _START_ to _END_ of _TOTAL_ matching)',
+            info: 'Total entries: _TOTAL_',
             paginate: {
                 previous: '← Previous',
                 next: 'Next →'
@@ -664,7 +749,7 @@ function createGuidesTable(guides) {
             }
         ],
     });
-    
+
     // Add event listeners for column-specific search inputs
     $('#guidesDataTable').on('keyup change', '.column-search', function() {
         const columnIndex = $(this).data('column');

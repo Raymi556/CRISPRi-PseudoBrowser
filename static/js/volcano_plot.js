@@ -581,7 +581,7 @@ function createGenesTable(records) {
                 topStart: 'buttons',
                 topEnd: 'search',
                 bottomStart: 'pageLength',
-                bottomEnd: 'info'
+                bottomEnd: ['info', 'paging']
             },
             buttons: [
                 {extend: 'copyHtml5', text: 'Copy'},
@@ -589,7 +589,7 @@ function createGenesTable(records) {
             ],
             language: {
                 search: 'Search genes:',
-                info: 'Total entries: _MAX_ (showing _START_ to _END_ of _TOTAL_ matching)',
+                info: 'Total entries: _TOTAL_',
                 paginate: {
                     previous: '← Previous',
                     next: 'Next →'

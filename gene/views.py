@@ -73,9 +73,21 @@ def get_gene_data(request):
         gene_input = data.get('gene', 'dnaN')
         window = int(data.get('window', 5000))
         conditions = data.get('conditions', [])
+        region_start = data.get('region_start')
+        region_end = data.get('region_end')
+        if region_start is not None:
+            region_start = int(region_start)
+        if region_end is not None:
+            region_end = int(region_end)
         
         # Prepare the plot data
-        plot_data = prepare_gene_plot_data(gene_input, window, conditions)
+        plot_data = prepare_gene_plot_data(
+            gene_input,
+            window,
+            conditions,
+            region_start=region_start,
+            region_end=region_end,
+        )
         
         if 'error' in plot_data:
             return JsonResponse({'error': plot_data['error']}, status=400)

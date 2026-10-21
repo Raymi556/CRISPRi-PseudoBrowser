@@ -5,7 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     new GeneAutocomplete(geneInput, {
         apiUrl: window.GENE_LIST_URL,
         maxSuggestions: 10,
-        debounceDelay: 300
+        debounceDelay: 300,
+        getQuery: () => geneInput.value.split(',').pop(),
+        formatSelection: value => {
+            const prefix = geneInput.value.slice(0, geneInput.value.lastIndexOf(',') + 1);
+            return `${prefix}${prefix ? ' ' : ''}${value}, `;
+        }
     });
     document.getElementById('mismatch-form').addEventListener('submit', loadMismatchData);
     document.getElementById('mismatch-download').addEventListener('click', () => {
@@ -26,42 +31,77 @@ function formatMetric(value) {
 }
 
 async function downloadPaperReadyMismatchPlot() {
-    const sourcePlotDiv = document.getElementById('mismatch-plot');
-    if (!sourcePlotDiv || !sourcePlotDiv.data || !sourcePlotDiv.layout) {
-        throw new Error('Plot is not available for download');
+    const sourcePlots = Array.from(
+        document.querySelectorAll('.mismatch-panel > div[id$="-plot"]')
+    ).filter(plot => plot.data && plot.layout);
+    if (!sourcePlots.length) {
+        throw new Error('No mismatch plots are available for download');
     }
 
-    const paperData = JSON.parse(JSON.stringify(sourcePlotDiv.data));
-    const paperLayout = buildPaperReadyMismatchLayout(sourcePlotDiv.layout);
-    const exportWidth = 1800;
-    const exportHeight = 1200;
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'fixed';
-    tempDiv.style.left = '-10000px';
-    tempDiv.style.top = '0';
-    tempDiv.style.width = `${exportWidth}px`;
-    tempDiv.style.height = `${exportHeight}px`;
-    document.body.appendChild(tempDiv);
+    const columns = sourcePlots.length === 1 ? 1 : sourcePlots.length <= 4 ? 2 : 3;
+    const panelWidth = 1000;
+    const panelHeight = 760;
+    const titleHeight = 55;
+    const canvas = document.createElement('canvas');
+    canvas.width = columns * panelWidth;
+    canvas.height = Math.ceil(sourcePlots.length / columns) * panelHeight;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.font = 'bold 24px Arial, sans-serif';
+    context.fillStyle = '#111111';
 
-    try {
-        await Plotly.newPlot(tempDiv, paperData, paperLayout, {
-            displayModeBar: false,
-            displaylogo: false,
-            responsive: false,
-            staticPlot: true
-        });
-
-        await Plotly.downloadImage(tempDiv, {
-            format: 'png',
-            filename: 'mismatch_data',
-            width: exportWidth,
-            height: exportHeight,
-            scale: 2
-        });
-    } finally {
-        Plotly.purge(tempDiv);
-        tempDiv.remove();
+    for (let index = 0; index < sourcePlots.length; index += 1) {
+        const sourcePlot = sourcePlots[index];
+        const row = Math.floor(index / columns);
+        const column = index % columns;
+        const temporaryPlot = document.createElement('div');
+        temporaryPlot.style.position = 'fixed';
+        temporaryPlot.style.left = '-10000px';
+        temporaryPlot.style.width = `${panelWidth}px`;
+        temporaryPlot.style.height = `${panelHeight - titleHeight}px`;
+        document.body.appendChild(temporaryPlot);
+        try {
+            const paperLayout = buildPaperReadyMismatchLayout(sourcePlot.layout);
+            paperLayout.width = panelWidth;
+            paperLayout.height = panelHeight - titleHeight;
+            await Plotly.newPlot(
+                temporaryPlot,
+                JSON.parse(JSON.stringify(sourcePlot.data)),
+                paperLayout,
+                {displayModeBar: false, displaylogo: false, staticPlot: true}
+            );
+            const imageUrl = await Plotly.toImage(temporaryPlot, {
+                format: 'png',
+                width: panelWidth,
+                height: panelHeight - titleHeight,
+                scale: 1
+            });
+            const image = await loadImage(imageUrl);
+            const x = column * panelWidth;
+            const y = row * panelHeight;
+            const title = document.querySelectorAll('.mismatch-panel h3')[index];
+            context.fillText(title ? title.textContent : `Mismatch panel ${index + 1}`, x + 20, y + 35);
+            context.drawImage(image, x, y + titleHeight, panelWidth, panelHeight - titleHeight);
+        } finally {
+            Plotly.purge(temporaryPlot);
+            temporaryPlot.remove();
+        }
     }
+
+    const link = document.createElement('a');
+    link.download = 'mismatch_data_grid.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+function loadImage(source) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = source;
+    });
 }
 
 function buildPaperReadyMismatchLayout(sourceLayout) {
@@ -154,14 +194,21 @@ async function loadMismatchData(event) {
                 'X-CSRFToken': window.CSRF_TOKEN
             },
             body: JSON.stringify({
-                gene: document.getElementById('mismatch-gene').value,
-                condition: document.getElementById('mismatch-condition').value
+                genes: document.getElementById('mismatch-gene').value
+                    .split(',')
+                    .map(value => value.trim())
+                    .filter(Boolean),
+                conditions: Array.from(
+                    document.getElementById('mismatch-condition').selectedOptions
+                ).map(option => option.value)
             })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to load mismatch data.');
-        mismatchData = data;
-        renderMismatchData(data);
+        mismatchData = data.panels
+            ? data.panels.map(panel => panel.data).filter(Boolean)
+            : [data];
+        renderMismatchPanels(data.panels || [{data}]);
     } catch (requestError) {
         error.textContent = requestError.message;
         error.hidden = false;
@@ -170,11 +217,69 @@ async function loadMismatchData(event) {
     }
 }
 
-function renderMismatchData(data) {
-    document.getElementById('mismatch-table-filter').hidden = true;
+function renderMismatchPanels(panels) {
+    const results = document.getElementById('mismatch-results');
+    const title = document.getElementById('mismatch-title');
+    title.textContent = 'Mismatch plots';
+    const grid = document.getElementById('mismatch-plot');
+    grid.className = 'mismatch-panel-grid';
+    grid.style.gridTemplateColumns = panels.length <= 4
+        ? 'repeat(2, minmax(0, 1fr))'
+        : 'repeat(3, minmax(0, 1fr))';
+    grid.innerHTML = panels.map((panel, index) => {
+        const panelId = `mismatch-panel-${index}`;
+        if (panel.error) {
+            return `<div class="mismatch-panel mismatch-panel--error">
+                <strong>${panel.gene_input} - ${panel.condition}</strong>
+                <p>${panel.error}</p>
+            </div>`;
+        }
+        return `<div class="mismatch-panel">
+            <h3>${panel.data.gene} (${panel.data.PAO1_ID}) - ${panel.data.condition}</h3>
+            <div id="${panelId}-plot"></div>
+            <div id="${panelId}-filter" class="table-filter-message" hidden></div>
+            <div id="${panelId}-table"></div>
+        </div>`;
+    }).join('');
+    results.hidden = false;
+    panels.forEach((panel, index) => {
+        if (!panel.error) {
+            renderMismatchPanel(
+                panel.data,
+                `mismatch-panel-${index}-plot`,
+                `mismatch-panel-${index}-table`,
+                `mismatch-panel-${index}-filter`,
+                index
+            );
+        }
+    });
+    const tableSelect = document.getElementById('mismatch-table-select');
+    const tableContainer = document.getElementById('mismatch-table');
+    tableContainer.innerHTML = '';
+    tableSelect.innerHTML = '';
+    panels.forEach((panel, index) => {
+        if (!panel.data) return;
+        const source = document.getElementById(`mismatch-panel-${index}-table`);
+        const filter = document.getElementById(`mismatch-panel-${index}-filter`);
+        source.hidden = index !== 0;
+        filter.hidden = true;
+        tableContainer.append(filter, source);
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${panel.data.gene} (${panel.data.PAO1_ID}) - ${panel.data.condition}`;
+        tableSelect.appendChild(option);
+    });
+    tableSelect.onchange = () => selectMismatchTable(Number(tableSelect.value));
+}
+
+function selectMismatchTable(index) {
+    document.querySelectorAll('#mismatch-table > div[id$="-table"]').forEach(table => {
+        table.hidden = !table.id.startsWith(`mismatch-panel-${index}-`);
+    });
+}
+
+function renderMismatchPanel(data, plotId, tableId, filterId, panelIndex) {
     document.getElementById('mismatch-results').hidden = false;
-    document.getElementById('mismatch-title').textContent =
-        `${data.gene} (${data.PAO1_ID}) - ${data.condition}`;
     const mismatch = data.records.filter(record => record.type === 'mismatch');
     const traces = [
         {
@@ -246,7 +351,7 @@ function renderMismatchData(data) {
         borderpad: 5,
         font: {color: '#e0e0e0', size: 11}
     };
-    Plotly.newPlot('mismatch-plot', traces, {
+    Plotly.newPlot(plotId, traces, {
         paper_bgcolor: '#1a1a1a',
         plot_bgcolor: '#1a1a1a',
         font: {color: '#e0e0e0'},
@@ -254,10 +359,19 @@ function renderMismatchData(data) {
         yaxis: {title: 'Adjusted log2FC'},
         shapes,
         annotations: [summaryBox],
-        height: 700,
+        height: 560,
+        legend: {
+            x: 1,
+            y: 1,
+            xanchor: 'right',
+            yanchor: 'top',
+            bgcolor: 'rgba(26, 26, 26, 0.85)',
+            bordercolor: '#a0a0a0',
+            borderwidth: 1
+        },
         hovermode: 'closest'
     }, {responsive: true, displaylogo: false}).then(() => {
-        const plot = document.getElementById('mismatch-plot');
+        const plot = document.getElementById(plotId);
         plot.on('plotly_click', event => {
             const point = event.points[0];
             const record = point && point.data && point.data.customdata
@@ -266,12 +380,15 @@ function renderMismatchData(data) {
             if (!record) {
                 return;
             }
+            const tableSelect = document.getElementById('mismatch-table-select');
+            tableSelect.value = panelIndex;
+            selectMismatchTable(panelIndex);
             filterTableFromPlot({
-                tableSelector: '#mismatch-data-table',
+                tableSelector: `#${tableId}-data`,
                 columnIndex: 4,
                 value: record.original,
                 label: 'parent guide',
-                messageId: 'mismatch-table-filter'
+                messageId: filterId
             });
         });
     });
@@ -287,8 +404,8 @@ function renderMismatchData(data) {
             <td>${record.batch}</td>
         </tr>
     `).join('');
-    document.getElementById('mismatch-table').innerHTML = `
-        <table id="mismatch-data-table" class="table table--full-width display">
+    document.getElementById(tableId).innerHTML = `
+        <table id="${tableId}-data" class="table table--full-width display">
             <thead><tr><th>Type</th><th>Predicted activity</th><th>Adjusted log2FC</th><th>Guide</th><th>Parent guide</th><th>Batch</th></tr></thead>
             <tfoot><tr>
                 <td><input type="text" class="column-search" placeholder="Type" data-column="0"></td>
@@ -301,7 +418,7 @@ function renderMismatchData(data) {
             <tbody>${rows}</tbody>
         </table>
     `;
-    const table = new DataTable('#mismatch-data-table', {
+    const table = new DataTable(`#${tableId}-data`, {
         destroy: true,
         pageLength: 10,
         lengthMenu: [10, 25, 50],
@@ -314,7 +431,7 @@ function renderMismatchData(data) {
             topStart: 'buttons',
             topEnd: 'search',
             bottomStart: 'pageLength',
-            bottomEnd: 'info'
+            bottomEnd: ['info', 'paging']
         },
         buttons: [
             {extend: 'copyHtml5', text: 'Copy'},
@@ -322,14 +439,14 @@ function renderMismatchData(data) {
         ],
         language: {
             search: 'Search guides:',
-            info: 'Total entries: _MAX_ (showing _START_ to _END_ of _TOTAL_ matching)',
+            info: 'Total entries: _TOTAL_',
             paginate: {
                 previous: '← Previous',
                 next: 'Next →'
             }
         }
     });
-    $('#mismatch-data-table').on('keyup change', '.column-search', function() {
+    $(`#${tableId}-data`).on('keyup change', '.column-search', function() {
         const columnIndex = $(this).data('column');
         table.column(columnIndex).search($(this).val()).draw();
     });

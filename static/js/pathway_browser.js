@@ -210,7 +210,9 @@ function renderDatasetTable(records) {
             order: [[0, 'asc']],
             layout: {
                 topStart: 'buttons',
-                topEnd: 'search'
+                topEnd: 'search',
+                bottomStart: 'pageLength',
+                bottomEnd: ['info', 'paging']
             },
             buttons: [
                 {extend: 'copyHtml5', text: 'Copy'},
@@ -218,6 +220,7 @@ function renderDatasetTable(records) {
             ],
             language: {
                 search: 'Search records:',
+                info: 'Total entries: _TOTAL_',
                 paginate: {
                     previous: '← Previous',
                     next: 'Next →'
