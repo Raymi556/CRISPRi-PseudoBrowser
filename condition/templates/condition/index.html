@@ -12,7 +12,7 @@
 <div class="card card--stacked" id="volcano-info-card">
     <div class="card-header-row">
         <form id="volcano-form" class="condition-selector-form">
-            <label for="condition-select" class="visually-hidden">Condition</label>
+            <label for="condition-select" class="form-label">Condition</label>
             <select id="condition-select" class="form-control">
                 {% for condition in conditions %}
                 <option value="{{ condition }}"
@@ -21,9 +21,6 @@
                 </option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn btn-primary">
-                Generate Plot
-            </button>
         </form>
         <div class="condition-highlight-row">
             <div class="form-group--relative condition-highlight-input">
@@ -33,7 +30,10 @@
                        autocomplete="off">
                 <small class="form-hint">Type a gene, choose a suggestion, then add a comma for the next gene.</small>
             </div>
-            <button id="download-plot" class="btn btn-secondary condition-download-button">Download Plot</button>
+            <button type="submit" class="btn btn-primary condition-button">
+                Generate Plot
+            </button>
+            <button id="download-plot" class="btn btn-secondary condition-button">Download Plot</button>
         </div>
     </div>
     <div id="error-message" class="message message-error message--spaced" hidden></div>

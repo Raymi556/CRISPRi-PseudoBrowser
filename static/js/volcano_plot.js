@@ -107,7 +107,6 @@ async function loadVolcanoData() {
             criteria.textContent = `Criteria: LFC < ${data.negative_lfc_threshold.toFixed(2)} or `
                 + `LFC > ${data.positive_lfc_threshold.toFixed(2)}, `
                 + `Stouffer p-value < ${data.fdr_threshold.toFixed(2)}. `
-                + data.recurrence_rule;
             criteria.hidden = false;
         }
 

@@ -81,8 +81,6 @@ def prepare_volcano_data(
         'negative_lfc_threshold': -lfc_cutoff,
         'positive_lfc_threshold': lfc_cutoff,
         'significance_rule': 'abs(log2FC) > 1 and Stouffer p-value < 0.05',
-        'recurrence_rule': 'Unavailable: recurrence membership was not supplied in the imported data.',
-        'threshold_source': 'Imported prepared-browser significance rule; Supplementary Table 11 values were not supplied.',
         'max_log10_fdr': max(
             (record['log10_fdr'] for record in records), default=0.0
         ),
