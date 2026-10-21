@@ -15,18 +15,16 @@
             <label for="mismatch-gene" class="form-label">Gene or PAO1 ID</label>
             <input id="mismatch-gene" class="form-control" value="dnaN" required autocomplete="off">
             <small class="form-hint">Enter one or more comma-separated genes or PAO1 IDs.</small>
-        </div>
-        <div>
-            <label for="mismatch-condition" class="form-label">Condition</label>
-            <select id="mismatch-condition" class="form-control" multiple size="5">
+            <label for="mismatch-condition" class="form-label" style="margin-top: 1rem;">Condition</label>
+            <select id="mismatch-condition" class="form-control" multiple size="5" style="margin-bottom: 1rem;">
                 {% for condition in conditions %}
                 <option value="{{ condition }}" {% if condition == default_condition %}selected{% endif %}>
                     {{ condition }}
                 </option>
                 {% endfor %}
             </select>
+            <button type="submit" class="btn btn-primary">Generate Plot</button>
         </div>
-        <button type="submit" class="btn btn-primary">Generate Plot</button>
     </form>
     <div id="mismatch-error" class="message message-error" hidden></div>
     <div id="mismatch-loading" class="loading" hidden>

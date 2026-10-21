@@ -1155,7 +1155,6 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 
 .mismatch-selector-form {
-    display: grid;
     grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.5fr) auto;
     align-items: end;
     gap: 1rem;
