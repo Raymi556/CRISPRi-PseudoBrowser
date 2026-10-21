@@ -12,32 +12,33 @@
 <div class="card card--stacked" id="volcano-info-card">
     <div class="card-header-row">
         <form id="volcano-form" class="condition-selector-form">
-            <label for="condition-select" class="form-label">Condition</label>
-            <select id="condition-select" class="form-control">
-                {% for condition in conditions %}
-                <option value="{{ condition }}"
-                    {% if condition == default_condition %}selected{% endif %}>
-                    {{ condition }}
-                </option>
-                {% endfor %}
-            </select>
-        </form>
-        <div class="condition-highlight-row">
-            <div class="form-group--relative condition-highlight-input">
+            <div class="condition-div">
+                <label for="condition-select" class="form-label">Condition</label>
+                <select id="condition-select" class="form-control">
+                    {% for condition in conditions %}
+                    <option value="{{ condition }}"
+                        {% if condition == default_condition %}selected{% endif %}>
+                        {{ condition }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group--relative condition-highlight-input condition-div">
                 <label for="highlight-genes" class="form-label">Genes to highlight</label>
                 <input id="highlight-genes" class="form-control"
                        placeholder="Gene symbols or PAO1 IDs, comma-separated"
                        autocomplete="off">
-                <small class="form-hint">Type a gene, choose a suggestion, then add a comma for the next gene.</small>
+                <small class="form-hint">Choose genes to highlight.</small>
             </div>
-            <button type="submit" class="btn btn-primary condition-button">
-                Generate Plot
-            </button>
-            <button id="download-plot" class="btn btn-secondary condition-button">Download Plot</button>
-        </div>
+            <div class="condition-button-div">
+                <button type="submit" class="btn btn-primary">
+                    Generate Plot
+                </button>
+                <button id="download-plot" class="btn btn-secondary">Download Plot</button>
+            </div>
+        </form>
     </div>
     <div id="error-message" class="message message-error message--spaced" hidden></div>
-    <div id="condition-criteria" class="message message-info" hidden></div>
     <div id="loading" class="loading" hidden>
         <div class="spinner"></div>
         <p class="mt-2">Loading data...</p>

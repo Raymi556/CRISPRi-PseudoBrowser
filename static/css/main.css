@@ -184,7 +184,6 @@ body {
 
 .condition-button {
     flex: 0 0 auto;
-    margin-bottom: 1.55rem;
 }
 
 .mismatch-panel-grid {
@@ -1143,15 +1142,18 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 
 .condition-selector-form {
-    display: flex;
     align-items: center;
     gap: 1rem;
     flex: 1;
 }
 
-.condition-selector-form .form-control {
-    width: auto;
-    flex: 1;
+.condition-div {
+    margin-bottom: 1rem;
+}
+
+.condition-button-div{
+    display: flex;
+    justify-content: space-between;
 }
 
 .mismatch-selector-form {
