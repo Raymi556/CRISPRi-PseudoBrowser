@@ -39,6 +39,10 @@ The repository includes `build.sh` to create the environment, install
 dependencies, and reconstruct `db.sqlite3` from the compressed database parts
 in `data_import/`.
 
+Database population uses only the prepared-browser files in
+`data_import/prepared_browser/`. Supplemental legacy files used to create
+those artifacts are not read by Django at runtime.
+
 From the repository root, run:
 
 ```bash

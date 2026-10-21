@@ -170,6 +170,34 @@ body {
     transition: all 0.2s ease;
 }
 
+.condition-highlight-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.condition-highlight-input {
+    flex: 1;
+}
+
+.condition-download-button {
+    flex: 0 0 auto;
+    margin-bottom: 1.55rem;
+}
+
+@media (max-width: 768px) {
+    .condition-highlight-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .condition-download-button {
+        margin-bottom: 0;
+    }
+}
+
 .form-control:focus {
     outline: none;
     border-color: var(--accent-red);

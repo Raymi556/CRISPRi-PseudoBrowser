@@ -10,7 +10,9 @@ class GeneAutocomplete {
             maxSuggestions: options.maxSuggestions || 10,
             debounceDelay: options.debounceDelay || 300,
             apiUrl: options.apiUrl,
-            onSelect: options.onSelect || (() => {})
+            onSelect: options.onSelect || (() => {}),
+            getQuery: options.getQuery || (() => this.input.value),
+            formatSelection: options.formatSelection || (value => value)
         };
         
         this.geneList = [];
@@ -101,7 +103,7 @@ class GeneAutocomplete {
     }
     
     handleInput() {
-        const query = this.input.value.trim();
+        const query = this.options.getQuery().trim();
         
         if (query.length < 2) {
             this.hideDropdown();
@@ -218,7 +220,7 @@ class GeneAutocomplete {
     }
     
     selectItem(value) {
-        this.input.value = value;
+        this.input.value = this.options.formatSelection(value);
         this.hideDropdown();
         this.addToRecentGenes(value);
         this.options.onSelect(value);

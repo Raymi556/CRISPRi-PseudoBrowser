@@ -52,7 +52,7 @@ def _crossing(bins, values, threshold):
 
 def _fit_sigmoid(points):
     if len(points) < 5 or points["type"].eq("mismatch").sum() == 0:
-        return [], None
+        return [], None, None
 
     x = points["y_pred"].to_numpy(dtype=float)
     y = points["LFC.adj"].to_numpy(dtype=float)
@@ -70,7 +70,7 @@ def _fit_sigmoid(points):
             maxfev=20000,
         )
     except (RuntimeError, ValueError):
-        return [], None
+        return [], None, None
 
     dose = np.linspace(0.05, 1.0, 96)
     predicted = logistic(dose, *parameters)
@@ -79,7 +79,7 @@ def _fit_sigmoid(points):
     return [
         {"dose": float(value), "p": float(prediction)}
         for value, prediction in zip(dose, predicted)
-    ], ec50
+    ], ec50, float(parameters[1])
 
 
 def prepare_mismatch_data(gene_input, condition):
@@ -103,7 +103,7 @@ def prepare_mismatch_data(gene_input, condition):
         .agg(y_pred=("y_pred", "mean"), med_LFC=("LFC.adj", "median"), n=("LFC.adj", "size"))
         .reset_index(drop=True)
     )
-    predicted, ec50 = _fit_sigmoid(selected)
+    predicted, ec50, emax = _fit_sigmoid(selected)
     perfect = selected[selected["type"] == "perfect"]["LFC.adj"]
     severity = float(perfect.median()) if not perfect.empty else None
     bin_x = binned["y_pred"].tolist()
@@ -111,6 +111,7 @@ def prepare_mismatch_data(gene_input, condition):
     summary = {
         "severity": severity,
         "ec50": ec50,
+        "emax": emax,
         "sensitivity": _crossing(bin_x, bin_y, -1.0),
         "protection": _crossing(bin_x, bin_y, 2.0),
     }

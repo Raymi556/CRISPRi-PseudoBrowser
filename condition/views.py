@@ -38,12 +38,19 @@ def get_volcano_data(request):
         condition = data.get('condition', '')
         lfc_threshold = float(data.get('lfc_threshold', 0.0))
         fdr_threshold = float(data.get('fdr_threshold', 0.05))
+        highlight_genes = data.get('highlight_genes', [])
+        if not isinstance(highlight_genes, list):
+            return JsonResponse(
+                {'error': 'highlight_genes must be a list.'}, status=400
+            )
         
         if not condition:
             return JsonResponse({'error': 'Condition is required'}, status=400)
         
         # Prepare the volcano plot data
-        plot_data = prepare_volcano_data(condition, lfc_threshold, fdr_threshold)
+        plot_data = prepare_volcano_data(
+            condition, lfc_threshold, fdr_threshold, highlight_genes
+        )
         
         if 'error' in plot_data:
             return JsonResponse({'error': plot_data['error']}, status=400)

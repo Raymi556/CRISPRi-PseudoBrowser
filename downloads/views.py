@@ -24,6 +24,7 @@ DOWNLOAD_DATASETS = {
         "columns": [
             "pao1_id", "pa14_id", "gene_name", "product_name", "category",
             "feature_type", "start", "end", "strand",
+            "operon", "tu",
         ],
     },
     "comparison_manifest": {

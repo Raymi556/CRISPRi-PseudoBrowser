@@ -17,8 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error downloading paper-ready mismatch plot:', error);
             });
         }
+
     });
 });
+
+function formatMetric(value) {
+    return value === null || value === undefined ? 'NA' : Number(value).toFixed(2);
+}
 
 async function downloadPaperReadyMismatchPlot() {
     const sourcePlotDiv = document.getElementById('mismatch-plot');
@@ -118,6 +123,19 @@ function buildPaperReadyMismatchLayout(sourceLayout) {
             return updatedShape;
         });
     }
+    if (layout.annotations) {
+        layout.annotations = layout.annotations.map(annotation => ({
+            ...annotation,
+            bgcolor: '#ffffff',
+            bordercolor: '#111111',
+            borderwidth: 1,
+            font: {
+                ...(annotation.font || {}),
+                color: '#111111',
+                size: Math.max((annotation.font && annotation.font.size) || 16, 16)
+            }
+        }));
+    }
 
     return layout;
 }
@@ -166,15 +184,15 @@ function renderMismatchData(data) {
             customdata: mismatch,
             mode: 'markers',
             name: 'Mismatch guides',
-            marker: {color: '#6f8ed7', size: 8}
+            marker: {color: '#dc2626', size: 8}
         },
         {
             x: data.bins.map(record => record.y_pred),
             y: data.bins.map(record => record.med_LFC),
             mode: 'lines+markers',
             name: 'Binned median',
-            marker: {color: '#ffffff', size: 7},
-            line: {color: '#ffffff', width: 2}
+            marker: {color: '#0f766e', size: 7},
+            line: {color: '#0f766e', width: 2}
         }
     ];
     if (data.predicted.length) {
@@ -206,20 +224,45 @@ function renderMismatchData(data) {
             });
         }
     });
+    const summaryBox = {
+        x: 0.06,
+        y: 0.08,
+        xref: 'paper',
+        yref: 'paper',
+        xanchor: 'left',
+        yanchor: 'bottom',
+        align: 'left',
+        text: [
+            `Sev=${formatMetric(data.summary.severity)}`,
+            `Emax=${formatMetric(data.summary.emax)}`,
+            `EC50=${formatMetric(data.summary.ec50)}`,
+            `Sens=${formatMetric(data.summary.sensitivity)}`,
+            `Prot=${formatMetric(data.summary.protection)}`
+        ].join('<br>'),
+        showarrow: false,
+        bgcolor: 'rgba(26, 26, 26, 0.9)',
+        bordercolor: '#a0a0a0',
+        borderwidth: 1,
+        borderpad: 5,
+        font: {color: '#e0e0e0', size: 11}
+    };
     Plotly.newPlot('mismatch-plot', traces, {
         paper_bgcolor: '#1a1a1a',
         plot_bgcolor: '#1a1a1a',
         font: {color: '#e0e0e0'},
-        xaxis: {title: 'Predicted guide activity', range: [0.05, 1]},
+        xaxis: {title: 'Predicted guide activity', range: [0.05, 1.05]},
         yaxis: {title: 'Adjusted log2FC'},
         shapes,
+        annotations: [summaryBox],
         height: 700,
         hovermode: 'closest'
     }, {responsive: true, displaylogo: false}).then(() => {
         const plot = document.getElementById('mismatch-plot');
         plot.on('plotly_click', event => {
             const point = event.points[0];
-            const record = point?.data?.customdata?.[point.pointNumber];
+            const record = point && point.data && point.data.customdata
+                ? point.data.customdata[point.pointNumber]
+                : null;
             if (!record) {
                 return;
             }
@@ -245,7 +288,6 @@ function renderMismatchData(data) {
         </tr>
     `).join('');
     document.getElementById('mismatch-table').innerHTML = `
-        <p class="text-muted">Severity: ${summary.severity ?? 'NA'} | EC50: ${summary.ec50 ?? 'NA'} | Sensitivity: ${summary.sensitivity ?? 'NA'} | Protection: ${summary.protection ?? 'NA'}</p>
         <table id="mismatch-data-table" class="table table--full-width display">
             <thead><tr><th>Type</th><th>Predicted activity</th><th>Adjusted log2FC</th><th>Guide</th><th>Parent guide</th><th>Batch</th></tr></thead>
             <tfoot><tr>

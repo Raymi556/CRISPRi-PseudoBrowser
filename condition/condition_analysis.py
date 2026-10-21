@@ -4,9 +4,18 @@ import numpy as np
 from downloads.models import Comparison, GeneConditionSummary
 
 
-def prepare_volcano_data(condition, lfc_threshold=1.0, fdr_threshold=0.05):
-    """Prepare fixed-threshold volcano data for one display condition."""
+def prepare_volcano_data(
+    condition, lfc_threshold=1.0, fdr_threshold=0.05, highlight_genes=None
+):
+    """Prepare volcano data using the imported comparison significance rule."""
     del lfc_threshold, fdr_threshold
+    lfc_cutoff = 1.0
+    p_cutoff = 0.05
+    highlight_ids = {
+        str(value).strip().lower()
+        for value in (highlight_genes or [])
+        if str(value).strip()
+    }
     selected = list(
         GeneConditionSummary.objects.filter(
             comparison__display_label=condition,
@@ -35,6 +44,10 @@ def prepare_volcano_data(condition, lfc_threshold=1.0, fdr_threshold=0.05):
         log10_p = row["log10_p_stouffer"]
         if log10_p is None:
             log10_p = -np.log10(max(row["p_stouffer"], 1e-300))
+        is_significant = (
+            abs(float(row["med_lfc"])) > lfc_cutoff
+            and float(row["p_stouffer"]) < p_cutoff
+        )
         records.append({
             'PAO1_ID': row['gene__pao1_id'],
             'gene_name': row['gene__gene_name'] or row['gene__pao1_id'],
@@ -42,7 +55,16 @@ def prepare_volcano_data(condition, lfc_threshold=1.0, fdr_threshold=0.05):
             'lfc': float(row['med_lfc']),
             'fdr': float(row['p_stouffer']),
             'log10_fdr': float(log10_p),
-            'is_significant': bool(row['is_significant']),
+            'is_significant': is_significant,
+            'direction': (
+                'sensitizing' if is_significant and float(row['med_lfc']) < 0
+                else 'protective' if is_significant else 'not_significant'
+            ),
+            'recurrence_membership': None,
+            'highlighted': (
+                str(row['gene__pao1_id']).lower() in highlight_ids
+                or str(row['gene__gene_name'] or '').lower() in highlight_ids
+            ),
             'category': row['gene__category'],
             'feature_type': row['gene__feature_type'],
             'batch': row['comparison__batch'],
@@ -54,12 +76,17 @@ def prepare_volcano_data(condition, lfc_threshold=1.0, fdr_threshold=0.05):
         'records': records,
         'total_genes': len(records),
         'significant_genes': sum(record['is_significant'] for record in records),
-        'lfc_threshold': 1.0,
-        'fdr_threshold': 0.05,
+        'lfc_threshold': lfc_cutoff,
+        'fdr_threshold': p_cutoff,
+        'negative_lfc_threshold': -lfc_cutoff,
+        'positive_lfc_threshold': lfc_cutoff,
         'significance_rule': 'abs(log2FC) > 1 and Stouffer p-value < 0.05',
+        'recurrence_rule': 'Unavailable: recurrence membership was not supplied in the imported data.',
+        'threshold_source': 'Imported prepared-browser significance rule; Supplementary Table 11 values were not supplied.',
         'max_log10_fdr': max(
             (record['log10_fdr'] for record in records), default=0.0
         ),
+        'highlighted_inputs': sorted(highlight_ids),
     }
 
 

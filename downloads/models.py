@@ -11,6 +11,8 @@ class Gene(models.Model):
     start = models.IntegerField(null=True, blank=True)
     end = models.IntegerField(null=True, blank=True)
     strand = models.CharField(max_length=8, blank=True)
+    operon = models.CharField(max_length=255, blank=True)
+    tu = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["pao1_id"]

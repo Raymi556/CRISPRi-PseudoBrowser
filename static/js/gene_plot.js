@@ -177,7 +177,7 @@ function displayGeneInfo(geneData) {
             </tr>
             <tr>
                 <td class="gene-info-label"><strong>Gene Name:</strong></td>
-                <td class="gene-info-value">${geneData.gene_name}</td>
+                <td class="gene-info-value"><em>${geneData.gene_name || geneData.PAO1_ID}</em></td>
             </tr>
             <tr>
                 <td class="gene-info-label"><strong>Location:</strong></td>
@@ -191,6 +191,12 @@ function displayGeneInfo(geneData) {
             <tr>
                 <td class="gene-info-label"><strong>Operon:</strong></td>
                 <td class="gene-info-value">${geneData.operon}</td>
+            </tr>
+            ` : ''}
+            ${geneData.TU && geneData.TU !== geneData.operon ? `
+            <tr>
+                <td class="gene-info-label"><strong>Transcriptional unit (TU):</strong></td>
+                <td class="gene-info-value">${geneData.TU}</td>
             </tr>
             ` : ''}
         </table>
@@ -309,10 +315,19 @@ function createCombinedGenePlot(genes, guides, region) {
         displaylogo: false
     };
 
-    Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces], layout, config).then(() => {
+    Plotly.newPlot(plotDiv, [...lfcTraces, ...medianTraces, ...geneLayer.traces], layout, config).then(() => {
         plotDiv.on('plotly_click', event => {
             const point = event.points[0];
-            const guide = point?.data?.customdata?.[point.pointNumber];
+            const selectedGene = point && point.data && point.data.customdata
+                ? point.data.customdata[point.pointNumber]
+                : null;
+            if (point && point.data && point.data.name === 'Genes' && selectedGene) {
+                selectGeneFromRegion(selectedGene);
+                return;
+            }
+            const guide = point && point.data && point.data.customdata
+                ? point.data.customdata[point.pointNumber]
+                : null;
             if (!guide) {
                 return;
             }
@@ -401,8 +416,20 @@ function buildGeneContextLayer(genes) {
     const annotations = [];
 
     if (!genes || genes.length === 0) {
-        return { shapes: shapes, annotations: annotations };
+        return { shapes: shapes, annotations: annotations, traces: [] };
     }
+
+    const geneTrace = {
+        x: [],
+        y: [],
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Genes',
+        showlegend: false,
+        marker: {size: 26, color: 'rgba(0,0,0,0)'},
+        customdata: [],
+        hovertemplate: '<b>%{customdata.gene_name}</b><br>%{customdata.PAO1_ID}<br>Click to select<extra></extra>'
+    };
 
     genes.forEach(gene => {
         const y = 0.5;
@@ -445,12 +472,41 @@ function buildGeneContextLayer(genes) {
             yref: 'y2',
             text: gene.gene_name || gene.PAO1_ID,
             showarrow: false,
-            font: { size: 10, color: '#e0e0e0' },
+            font: {
+                size: gene.is_target ? 12 : 10,
+                color: '#e0e0e0',
+                family: gene.is_target ? 'Arial Bold' : 'Arial'
+            },
             textangle: 90
         });
+        geneTrace.x.push((gene.start + gene.end) / 2);
+        geneTrace.y.push(y);
+        geneTrace.customdata.push(gene);
     });
 
-    return { shapes: shapes, annotations: annotations };
+    return { shapes: shapes, annotations: annotations, traces: [geneTrace] };
+}
+
+function selectGeneFromRegion(gene) {
+    if (!gene || !gene.PAO1_ID) return;
+    const input = document.getElementById('gene-input');
+    if (input) input.value = gene.gene_name || gene.PAO1_ID;
+    currentData.selected_gene_filter = gene.PAO1_ID;
+    const table = $('#guidesDataTable').DataTable();
+    if (table) {
+        table.column(0).search(gene.gene_name || gene.PAO1_ID).draw();
+    }
+    const filter = document.getElementById('guides-table-filter');
+    if (filter) {
+        filter.hidden = false;
+        filter.innerHTML = `Showing guides for <em>${gene.gene_name || gene.PAO1_ID}</em> `
+            + `<button type="button" class="btn btn-secondary btn--tight" id="clear-gene-filter">Clear gene filter</button>`;
+        document.getElementById('clear-gene-filter').onclick = () => {
+            table.column(0).search('').draw();
+            filter.hidden = true;
+            currentData.selected_gene_filter = null;
+        };
+    }
 }
 
 function buildLFCTraces(guides) {
@@ -486,7 +542,7 @@ function buildLFCTraces(guides) {
             },
             customdata: conditionGuides,
             text: conditionGuides.map(g =>
-                `Gene: ${g.gene_name}<br>` +
+                `Gene: <i>${g.gene_name}</i><br>` +
                 `Guide: ${g.spacer}<br>` +
                 `LFC: ${g['LFC.adj'].toFixed(3)}<br>` +
                 `Position: ${Math.round(g.guide_center)}`
@@ -525,9 +581,8 @@ function createGuidesTable(guides) {
                     <th>LFC</th>
                     <th>Position</th>
                     <th>Strand</th>
-                    <th>Mean Abundance</th>
-                    <th>Off-targets</th>
-                    <th>GC%</th>
+                    <th>Mean abundance (T0)</th>
+                    <th>Predicted efficacy</th>
                 </tr>
             </thead>
             <tfoot>
@@ -539,9 +594,8 @@ function createGuidesTable(guides) {
                     <td><input type="text" class="column-search" placeholder="LFC" data-column="4"></td>
                     <td><input type="text" class="column-search" placeholder="Position" data-column="5"></td>
                     <td><input type="text" class="column-search" placeholder="Strand" data-column="6"></td>
-                    <td><input type="text" class="column-search" placeholder="Mean Abundance" data-column="7"></td>
-                    <td><input type="text" class="column-search" placeholder="Off-targets" data-column="8"></td>
-                    <td><input type="text" class="column-search" placeholder="GC%" data-column="9"></td>
+                    <td><input type="text" class="column-search" placeholder="Mean abundance (T0)" data-column="7"></td>
+                    <td><input type="text" class="column-search" placeholder="Efficacy" data-column="8"></td>
                 </tr>
             </tfoot>
             <tbody>
@@ -559,16 +613,15 @@ function createGuidesTable(guides) {
         const lfcClass = guide['LFC.adj'] < -1 ? 'lfc-negative' : (guide['LFC.adj'] > 1 ? 'lfc-positive' : 'lfc-neutral');
         tableHTML += `
             <tr>
-                <td>${guide.gene_name}</td>
+                <td><em>${guide.gene_name || guide.PAO1_ID}</em></td>
                 <td>${guide.PAO1_ID}</td>
                 <td><span class="text-sm">${guide.condition}</span></td>
                 <td><code class="code-chip text-sm">${guide.spacer}</code></td>
                 <td class="font-semibold ${lfcClass}">${guide['LFC.adj'].toFixed(3)}</td>
                 <td>${Math.round(guide.guide_center).toLocaleString()}</td>
                 <td>${guide.forward ? '+' : '-'}</td>
-                <td>${guide.mean_abund_50M ? guide.mean_abund_50M.toFixed(2) : 'N/A'}</td>
-                <td>${guide.off_target_n || 0}</td>
-                <td>${guide.gc ? (guide.gc * 100).toFixed(1) : 'N/A'}</td>
+                <td>${guide.mean_abund_50M !== null && guide.mean_abund_50M !== undefined ? Number(guide.mean_abund_50M).toFixed(0) : 'N/A'}</td>
+                <td>${guide.predicted_efficacy_score !== null && guide.predicted_efficacy_score !== undefined ? Number(guide.predicted_efficacy_score).toFixed(2) : 'N/A'}</td>
             </tr>
         `;
     });

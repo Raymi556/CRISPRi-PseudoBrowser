@@ -22,6 +22,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const form = document.getElementById('volcano-form');
     form.addEventListener('submit', handleFormSubmit);
+    const highlightInput = document.getElementById('highlight-genes');
+    if (highlightInput) {
+        new GeneAutocomplete(highlightInput, {
+            apiUrl: window.GENE_LIST_URL,
+            maxSuggestions: 10,
+            debounceDelay: 250,
+            getQuery: () => highlightInput.value.split(',').pop().trim(),
+            formatSelection: value => {
+                const parts = highlightInput.value.split(',');
+                parts[parts.length - 1] = ` ${value}`;
+                return `${parts.join(',').replace(/^ /, '')}, `;
+            }
+        });
+    }
 
     // Download plot button
     const downloadBtn = document.getElementById('download-plot');
@@ -72,7 +86,11 @@ async function loadVolcanoData() {
                 'X-CSRFToken': window.CSRF_TOKEN
             },
             body: JSON.stringify({
-                condition: condition
+                condition: condition,
+                highlight_genes: document.getElementById('highlight-genes').value
+                    .split(',')
+                    .map(value => value.trim())
+                    .filter(Boolean)
             })
         });
         
@@ -84,6 +102,14 @@ async function loadVolcanoData() {
         }
         
         currentData = data;
+        const criteria = document.getElementById('condition-criteria');
+        if (criteria) {
+            criteria.textContent = `Criteria: LFC < ${data.negative_lfc_threshold.toFixed(2)} or `
+                + `LFC > ${data.positive_lfc_threshold.toFixed(2)}, `
+                + `Stouffer p-value < ${data.fdr_threshold.toFixed(2)}. `
+                + data.recurrence_rule;
+            criteria.hidden = false;
+        }
 
         showPlots();
         
@@ -127,13 +153,16 @@ function createVolcanoPlot(data) {
     }
     
     // Separate significant and non-significant genes
-    const significantGenes = [];
+    const highlightedGenes = data.records.filter(record => record.highlighted);
+    const sensitizingGenes = [];
+    const protectiveGenes = [];
     const nonSignificantGenes = [];
     
     data.records.forEach(record => {
-        const isSig = record.is_significant;
-        if (isSig) {
-            significantGenes.push(record);
+        if (record.direction === 'sensitizing') {
+            sensitizingGenes.push(record);
+        } else if (record.direction === 'protective') {
+            protectiveGenes.push(record);
         } else {
             nonSignificantGenes.push(record);
         }
@@ -168,30 +197,45 @@ function createVolcanoPlot(data) {
         traces.push(trace1);
     }
     
-    // Significant genes trace
-    if (significantGenes.length > 0) {
-        const trace2 = {
-            x: significantGenes.map(r => r.lfc),
-            y: significantGenes.map(r => r.log10_fdr),
+    function categoryTrace(records, name, color) {
+        return {
+            x: records.map(r => r.lfc),
+            y: records.map(r => r.log10_fdr),
             mode: 'markers',
             type: 'scatter',
-            name: 'Significant',
-            marker: {
-                size: 8,
-                color: '#dc2626',
-                line: {
-                    color: '#ef4444',
-                    width: 1
-                }
-            },
-            customdata: significantGenes,
-            text: significantGenes.map(r => 
+            name: name,
+            marker: {size: 8, color: color, line: {color: color, width: 1}},
+            customdata: records,
+            text: records.map(r =>
                 `<b>${r.gene_name}</b><br>LFC: ${r.lfc.toFixed(2)}<br>Stouffer p: ${r.fdr.toExponential(2)}`
             ),
             hovertemplate: '%{text}<extra></extra>',
             showlegend: true
         };
-        traces.push(trace2);
+    }
+
+    if (sensitizingGenes.length > 0) {
+        traces.push(categoryTrace(sensitizingGenes, 'Sensitizing', '#3b82c4'));
+    }
+    if (protectiveGenes.length > 0) {
+        traces.push(categoryTrace(protectiveGenes, 'Protective', '#991b1b'));
+    }
+    if (highlightedGenes.length > 0) {
+        traces.push({
+            x: highlightedGenes.map(record => record.lfc),
+            y: highlightedGenes.map(record => record.log10_fdr),
+            mode: 'markers+text',
+            type: 'scatter',
+            name: 'Highlighted genes',
+            text: highlightedGenes.map(record => record.gene_name),
+            textposition: 'top center',
+            marker: {size: 13, color: '#f59e0b', line: {color: '#111111', width: 1.5}},
+            customdata: highlightedGenes,
+            hovertemplate: '<b>%{text}</b><extra></extra>',
+            showlegend: true
+        });
+    }
+    if (sensitizingGenes.length + protectiveGenes.length > 0) {
     }
     
     // Create shapes for threshold lines
@@ -258,14 +302,14 @@ function createVolcanoPlot(data) {
         paper_bgcolor: '#1a1a1a',
         plot_bgcolor: '#1a1a1a',
         font: { color: '#e0e0e0' },
-        margin: { t: 60, b: 80, l: 80, r: 40 },
+        margin: { t: 60, b: 130, l: 80, r: 40 },
         height: 700,
         hovermode: 'closest',
         legend: {
-            x: 0.02,
-            y: 0.98,
+            x: 0.04,
+            y: 0.06,
             xanchor: 'left',
-            yanchor: 'top',
+            yanchor: 'bottom',
             bgcolor: 'rgba(26, 26, 26, 0.8)',
             bordercolor: '#404040',
             borderwidth: 1
@@ -280,7 +324,9 @@ function createVolcanoPlot(data) {
     Plotly.newPlot(plotDiv, traces, layout, config).then(() => {
         plotDiv.on('plotly_click', event => {
             const point = event.points[0];
-            const record = point?.data?.customdata?.[point.pointNumber];
+            const record = point && point.data && point.data.customdata
+                ? point.data.customdata[point.pointNumber]
+                : null;
             if (!record) {
                 return;
             }
@@ -303,6 +349,7 @@ async function downloadPaperReadyVolcanoPlot() {
 
     const paperData = JSON.parse(JSON.stringify(sourcePlotDiv.data));
     const paperLayout = buildPaperReadyVolcanoLayout(sourcePlotDiv.layout);
+    addPaperReadyVolcanoLabels(paperData, paperLayout);
     const exportWidth = 1800;
     const exportHeight = 1400;
     const tempDiv = document.createElement('div');
@@ -332,6 +379,39 @@ async function downloadPaperReadyVolcanoPlot() {
         Plotly.purge(tempDiv);
         tempDiv.remove();
     }
+
+    function addPaperReadyVolcanoLabels(data, layout) {
+        const records = currentData.records
+            .filter(record => record.is_significant)
+            .sort((left, right) => left.fdr - right.fdr)
+            .slice(0, 20);
+        const placed = [];
+        layout.annotations = (layout.annotations || []).concat(records.map((record, index) => {
+            const crowded = placed.some(previous =>
+                Math.abs(previous.x - record.lfc) < 0.45
+                && Math.abs(previous.y - record.log10_fdr) < 1.5
+            );
+            const side = index % 2 === 0 ? 1 : -1;
+            const vertical = crowded ? (index % 3 === 0 ? -58 : 58) : (index % 3 === 0 ? -34 : 34);
+            placed.push({x: record.lfc, y: record.log10_fdr});
+            return {
+                x: record.lfc,
+                y: record.log10_fdr,
+                xref: 'x',
+                yref: 'y',
+                text: `<i>${record.gene_name}</i>`,
+                showarrow: true,
+                arrowhead: 2,
+                arrowsize: 1,
+                arrowwidth: 1,
+                arrowcolor: '#333333',
+                ax: side * (crowded ? 42 : 28),
+                ay: vertical,
+                font: {size: 15, color: '#111111'},
+                bgcolor: 'rgba(255,255,255,0.8)'
+            };
+        }));
+    }
 }
 
 function buildPaperReadyVolcanoLayout(sourceLayout) {
@@ -346,6 +426,17 @@ function buildPaperReadyVolcanoLayout(sourceLayout) {
         family: 'Arial, sans-serif'
     };
     layout.margin = { t: 80, b: 110, l: 120, r: 50 };
+    layout.annotations = (layout.annotations || []).map(annotation => ({
+        ...annotation,
+        font: {
+            ...(annotation.font || {}),
+            color: '#111111',
+            size: Math.max((annotation.font && annotation.font.size) || 15, 15)
+        },
+        bgcolor: annotation.bgcolor || 'rgba(255,255,255,0.8)',
+        bordercolor: annotation.bordercolor || '#777777',
+        borderwidth: annotation.borderwidth || 0.5
+    }));
 
     ['xaxis', 'yaxis'].forEach(axisName => {
         if (!layout[axisName]) {
@@ -423,13 +514,13 @@ function createGenesTable(records) {
         return;
     }
 
-    const significantRecords = records.filter(record => record.is_significant);
-    if (significantRecords.length === 0) {
-        tableContainer.innerHTML = '<p class="empty-state">No significant genes available</p>';
+    const tableRecords = records.filter(record => record.is_significant || record.highlighted);
+    if (tableRecords.length === 0) {
+        tableContainer.innerHTML = '<p class="empty-state">No significant or highlighted genes available</p>';
         return;
     }
 
-    const sortedRecords = [...significantRecords].sort((left, right) => {
+    const sortedRecords = [...tableRecords].sort((left, right) => {
         const leftFdr = Number(left.fdr);
         const rightFdr = Number(right.fdr);
         return leftFdr - rightFdr;

@@ -62,8 +62,8 @@ def get_genes_in_region(region_start, region_end):
     
     # Find genes that overlap with the region
     genes_in_region = pao1[
-        (pao1['start'] >= region_start) & (pao1['end'] <= region_end)
-    ].copy()
+        (pao1['end'] >= region_start) & (pao1['start'] <= region_end)
+    ].sort_values(['start', 'end', 'PAO1_ID']).copy()
     
     # Normalize strand information
     # genes_in_region['strand'] = genes_in_region['strand'].apply(
@@ -99,6 +99,7 @@ def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
         'guide__downstream',
         'guide__off_target_n',
         'guide__mean_abund_50m',
+        'guide__predicted_efficacy_score',
         'guide__offset',
         'guide__gc',
     )
@@ -114,6 +115,7 @@ def get_guides_for_genes(pao1_ids, conditions, guide_type='perfect'):
         'guide__mean_abund_50m': 'mean_abund_50M',
         'guide__offset': 'offset',
         'guide__gc': 'gc',
+        'guide__predicted_efficacy_score': 'predicted_efficacy_score',
     })
     pao1 = load_pao1_annotation()
     
@@ -197,6 +199,9 @@ def prepare_gene_plot_data(gene_input, window=5000, conditions=None):
     
     # Get all genes in the region
     genes_in_region = get_genes_in_region(region['start'], region['end'])
+    genes_in_region['is_target'] = genes_in_region['PAO1_ID'].eq(
+        target_gene['PAO1_ID']
+    )
     
     # Get guides data
     if conditions:

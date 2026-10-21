@@ -21,7 +21,7 @@ def load_pao1_annotation():
         from downloads.models import Gene
         rows = Gene.objects.values(
             'pao1_id', 'pa14_id', 'gene_name', 'product_name', 'category',
-            'feature_type', 'start', 'end', 'strand'
+            'feature_type', 'start', 'end', 'strand', 'operon', 'tu'
         )
         _data_cache['pao1'] = pd.DataFrame.from_records(rows).rename(
             columns={
@@ -34,6 +34,8 @@ def load_pao1_annotation():
                 'start': 'start',
                 'end': 'end',
                 'strand': 'strand',
+                'operon': 'operon',
+                'tu': 'TU',
             }
         )
     return _data_cache['pao1']

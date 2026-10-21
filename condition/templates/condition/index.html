@@ -25,9 +25,19 @@
                 Generate Plot
             </button>
         </form>
-        <button id="download-plot" class="btn btn-secondary">Download Plot</button>
+        <div class="condition-highlight-row">
+            <div class="form-group--relative condition-highlight-input">
+                <label for="highlight-genes" class="form-label">Genes to highlight</label>
+                <input id="highlight-genes" class="form-control"
+                       placeholder="Gene symbols or PAO1 IDs, comma-separated"
+                       autocomplete="off">
+                <small class="form-hint">Type a gene, choose a suggestion, then add a comma for the next gene.</small>
+            </div>
+            <button id="download-plot" class="btn btn-secondary condition-download-button">Download Plot</button>
+        </div>
     </div>
     <div id="error-message" class="message message-error message--spaced" hidden></div>
+    <div id="condition-criteria" class="message message-info" hidden></div>
     <div id="loading" class="loading" hidden>
         <div class="spinner"></div>
         <p class="mt-2">Loading data...</p>
@@ -58,9 +68,11 @@
     // The condition browser reads these globals during its own startup sequence.
     window.CONDITIONS = {{ conditions|safe }};
     window.VOLCANO_DATA_URL = "{% url 'condition:get_volcano_data' %}";
+    window.GENE_LIST_URL = "{% url 'gene:gene_list' %}";
     window.CSRF_TOKEN = '{{ csrf_token }}';
 </script>
 <script src="{% static 'js/custom_slider.js' %}"></script>
 <script src="{% static 'js/table_filter.js' %}"></script>
+<script src="{% static 'js/gene_autocomplete.js' %}"></script>
 <script src="{% static 'js/volcano_plot.js' %}?v=20260429"></script>
 {% endblock %}
