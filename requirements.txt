@@ -5,5 +5,3 @@ plotly==6.5.2
 numpy>=2.4.0
 python-dateutil>=2.9.0
 scipy>=1.13.0
-scipy>=1.13.0
-nodejs==26.10.0

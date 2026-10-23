@@ -25,7 +25,7 @@ conda activate pseudoBrowser
 pip install -r requirements.txt
 
 database_parts=(data_import/db_part_*.gz)
-if [ ! -e "${database_parts[0]}" ]; then
+if [ ${#database_parts[@]} -eq 0 ]; then
     printf '%s\n' "Error: No database parts were found in data_import/." >&2
     exit 1
 fi
